@@ -1,0 +1,17 @@
+BRIDGEVOICE 2.0 — START HERE
+
+1. Install Node.js 24 LTS, version 24.15 or newer: https://nodejs.org
+2. Extract bridgevoice-2.zip.
+3. In Mac Terminal:
+
+   cd ~/Downloads/bridgevoice-2
+   bash start.sh
+
+4. Open http://localhost:3000
+
+Your supplied logo is already in the app. Guided offline mode needs no key.
+For actual AI chat, follow README.md to put your Meta key privately in .env.local.
+Do not paste your API key into ChatGPT, source code, or the browser's Settings.
+
+Read KNOWN_LIMITATIONS.md. Live Meta, real microphone/browser behavior and deployment
+are not verified in this package. Do not use draft translations with clients without review.

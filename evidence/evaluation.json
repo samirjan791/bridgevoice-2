@@ -1,0 +1,35 @@
+{
+  "scope": "Small fictional deterministic checks only; not translation accuracy or model evaluation.",
+  "cases": [
+    {
+      "source": "Do not take 2 tablets.",
+      "target": "Take 2 tablets.",
+      "flag": "negation-mismatch",
+      "detected": true
+    },
+    {
+      "source": "Take 5 mg.",
+      "target": "Take 50 mg.",
+      "flag": "number-mismatch",
+      "detected": true
+    },
+    {
+      "source": "Take 5 mg.",
+      "target": "Take 5 ml.",
+      "flag": "unit-check",
+      "detected": true
+    },
+    {
+      "source": "Return within 14 days.",
+      "target": "Return within 40 days.",
+      "flag": "number-mismatch",
+      "detected": true
+    }
+  ],
+  "detected": 4,
+  "total": 4,
+  "demoSegmentsWithGlossaryMatches": 14,
+  "demoSegments": 18,
+  "measuredRuleBatchMs": 14.863789999999995,
+  "liveModelEvaluated": false
+}
