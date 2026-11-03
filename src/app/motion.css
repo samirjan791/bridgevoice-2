@@ -1,0 +1,520 @@
+/* ==========================================================================
+   BridgeVoice motion + polish layer.
+   Loaded after globals.css. Mirrors src/lib/motion.ts.
+   Rules: animate transform/opacity only; one global reduced-motion switch;
+   nothing here may delay interaction.
+   ========================================================================== */
+
+/* ---- Tokens ------------------------------------------------------------ */
+:root,
+[data-theme="dark"] {
+  --bridge: #31c8ef; /* the one accent: from the approved bridge symbol */
+  --bridge-soft: rgb(49 200 239 / 0.16);
+  --amber-soft: #ffbd6b;
+}
+[data-theme="light"] {
+  --bridge: #0b7fa3; /* AA on white */
+  --bridge-soft: rgb(11 127 163 / 0.12);
+  --amber-soft: #b86a0d;
+}
+:root {
+  --dur-instant: 90ms;
+  --dur-fast: 150ms;
+  --dur-base: 220ms;
+  --dur-slow: 360ms;
+  --ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-spring: cubic-bezier(0.34, 1.4, 0.5, 1);
+  --font-arabic-script: "Noto Naskh Arabic", "Vazirmatn", "Segoe UI", "Geeza Pro",
+    "Noto Sans Arabic", system-ui, sans-serif;
+}
+
+/* ---- Focus: one calm, visible ring ------------------------------------- */
+:where(button, a, input, select, textarea, summary, [role="option"]):focus-visible {
+  outline: 2px solid var(--bridge);
+  outline-offset: 2px;
+}
+
+/* ---- Arabic-script text: proper face, generous leading, never tracked --- */
+:lang(ps),
+:lang(fa),
+:lang(fa-AF) {
+  font-family: var(--font-arabic-script);
+  letter-spacing: 0 !important;
+  word-spacing: 0;
+  line-height: 1.8;
+}
+
+/* ---- Welcome: one warm line, one input, four quiet chips ---------------- */
+.chat-welcome {
+  padding: 0 0 20px;
+}
+.chat-welcome .full-brand {
+  width: 112px;
+  height: 112px;
+  margin-bottom: 18px;
+  border-radius: 22px;
+  animation: rise var(--dur-slow) var(--ease-out) both;
+}
+.chat-welcome .welcome-eyebrow {
+  display: block;
+  font-size: 0.62rem;
+  letter-spacing: 0.22em;
+  opacity: 0.75;
+  animation: rise var(--dur-slow) var(--ease-out) 60ms both;
+}
+.chat-welcome h1.welcome-line {
+  font-size: clamp(1.6rem, 3.4vw, 2.35rem);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.25;
+  min-height: 1.4em;
+  margin: 14px auto 8px;
+  max-width: 20em;
+  transition: opacity var(--dur-base) var(--ease-out);
+}
+.chat-welcome h1.welcome-line:lang(ps),
+.chat-welcome h1.welcome-line:lang(fa-AF) {
+  letter-spacing: 0;
+  line-height: 1.7;
+}
+.chat-welcome h1.welcome-line[data-fading="true"] {
+  opacity: 0;
+}
+.welcome-caret {
+  display: inline-block;
+  width: 2px;
+  height: 0.95em;
+  margin-inline-start: 3px;
+  vertical-align: text-bottom;
+  background: var(--bridge);
+  animation: blink 900ms steps(1) infinite;
+}
+.chat-welcome > div > p {
+  margin-bottom: 22px;
+  animation: rise var(--dur-slow) var(--ease-out) 140ms both;
+}
+.chat-welcome .prompt-cards {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  width: min(100%, 720px);
+  margin-inline: auto;
+}
+.chat-welcome .prompt-cards button {
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  min-height: 42px;
+  min-width: 0;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: transparent;
+  border: 1px solid var(--line);
+  font-size: 0.86rem;
+  font-weight: 500;
+  animation: rise var(--dur-slow) var(--ease-out) both;
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    background var(--dur-fast),
+    border-color var(--dur-fast);
+}
+.chat-welcome .prompt-cards button:nth-child(1) { animation-delay: 200ms; }
+.chat-welcome .prompt-cards button:nth-child(2) { animation-delay: 260ms; }
+.chat-welcome .prompt-cards button:nth-child(3) { animation-delay: 320ms; }
+.chat-welcome .prompt-cards button:nth-child(4) { animation-delay: 380ms; }
+.chat-welcome .prompt-cards button:hover {
+  background: var(--surface);
+  border-color: var(--bridge);
+  transform: translateY(-1px);
+}
+.chat-welcome .prompt-cards button:active {
+  transform: scale(0.97);
+  transition-duration: var(--dur-instant);
+}
+.chat-welcome .prompt-cards svg {
+  margin: 0;
+  color: var(--bridge);
+  flex: none;
+}
+.chat-welcome .welcome-trust {
+  opacity: 0.8;
+  animation: rise var(--dur-slow) var(--ease-out) 440ms both;
+}
+
+/* ---- Composer: soft focus ring, smooth send/stop morph ------------------ */
+.chat-composer {
+  transition:
+    border-color var(--dur-base) var(--ease-out),
+    box-shadow var(--dur-base) var(--ease-out);
+}
+.chat-composer:focus-within {
+  border-color: var(--bridge);
+  box-shadow: 0 0 0 4px var(--bridge-soft);
+}
+.chat-app .send-button {
+  transition:
+    transform var(--dur-fast) var(--ease-spring),
+    opacity var(--dur-fast),
+    background var(--dur-fast);
+}
+.chat-app .send-button:not(:disabled):hover {
+  transform: scale(1.06);
+}
+.chat-app .send-button:not(:disabled):active {
+  transform: scale(0.93);
+  transition-duration: var(--dur-instant);
+}
+.chat-app .send-button svg {
+  animation: pop var(--dur-base) var(--ease-spring) both;
+}
+.composer-popover {
+  transform-origin: bottom left;
+  animation: menu-in var(--dur-base) var(--ease-out) both;
+}
+[dir="rtl"] .composer-popover {
+  transform-origin: bottom right;
+}
+
+/* ---- Buttons, sidebar, messages ---------------------------------------- */
+button:active:not(:disabled) {
+  transform: scale(0.98);
+  transition-duration: var(--dur-instant);
+}
+.recent-chats > div:not(.history-off),
+.chat-sidebar a,
+.theme-switch,
+.tool-icon {
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    color var(--dur-fast),
+    transform var(--dur-fast) var(--ease-out);
+}
+.theme-switch:hover {
+  transform: rotate(18deg);
+}
+.jump-latest {
+  animation: rise var(--dur-base) var(--ease-spring) both;
+}
+
+/* ---- Meaning Check: highlights are drawn in, one after another ---------- */
+.meaning-check blockquote mark {
+  background: linear-gradient(var(--bridge-soft), var(--bridge-soft)) no-repeat 0 100% / 0% 100%;
+  color: inherit;
+  border-bottom: 2px solid var(--bridge);
+  border-radius: 2px;
+  padding: 0 2px;
+  animation: sweep 520ms var(--ease-out) 120ms forwards;
+}
+.meaning-check blockquote mark:nth-of-type(2) { animation-delay: 260ms; }
+.meaning-check blockquote mark:nth-of-type(3) { animation-delay: 400ms; }
+.meaning-check blockquote mark:nth-of-type(4) { animation-delay: 540ms; }
+.meaning-check blockquote mark:nth-of-type(n + 5) { animation-delay: 680ms; }
+.meaning-findings {
+  animation: rise var(--dur-base) var(--ease-out) both;
+}
+
+/* ---- Toast -------------------------------------------------------------- */
+.toast:not(:empty) {
+  animation: rise var(--dur-base) var(--ease-spring) both;
+}
+
+/* ---- Skeleton placeholders (calm shimmer) ------------------------------- */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+  background: var(--surface);
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, var(--raised), transparent);
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+/* ---- Command palette ---------------------------------------------------- */
+.palette-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  display: grid;
+  place-items: start center;
+  padding: min(14vh, 120px) 16px 16px;
+  background: rgb(0 0 0 / 0.5);
+  animation: fade-in var(--dur-fast) ease-out both;
+}
+.palette {
+  width: min(620px, 100%);
+  max-height: min(70vh, 560px);
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--bg);
+  color: var(--text);
+  box-shadow: 0 24px 80px rgb(0 0 0 / 0.45);
+  overflow: hidden;
+  animation: menu-in var(--dur-base) var(--ease-out) both;
+  transform-origin: top center;
+}
+.palette-input {
+  width: 100%;
+  min-height: 54px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0 18px;
+  font-size: 1rem;
+}
+.palette-input:focus-visible {
+  outline: none;
+}
+.palette-list {
+  list-style: none;
+  margin: 0;
+  padding: 6px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.palette-list li {
+  margin: 0;
+}
+.palette-group {
+  padding: 10px 12px 4px;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.palette-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 42px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 0.92rem;
+}
+.palette-item[data-active="true"] {
+  background: var(--surface);
+  box-shadow: inset 2px 0 0 var(--bridge);
+}
+[dir="rtl"] .palette-item[data-active="true"] {
+  box-shadow: inset -2px 0 0 var(--bridge);
+}
+.palette-item kbd {
+  font: inherit;
+  font-size: 0.7rem;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 1px 6px;
+}
+.palette-empty {
+  padding: 18px 12px;
+  color: var(--muted);
+  text-align: center;
+  font-size: 0.9rem;
+}
+.palette-foot {
+  display: flex;
+  gap: 16px;
+  padding: 8px 14px;
+  border-top: 1px solid var(--line);
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+
+/* ---- Error boundary ----------------------------------------------------- */
+.app-error {
+  display: grid;
+  place-content: center;
+  gap: 12px;
+  min-height: 60vh;
+  padding: 24px;
+  text-align: center;
+}
+.app-error h1 {
+  font-size: 1.4rem;
+  margin: 0;
+}
+.app-error p {
+  margin: 0 auto;
+  max-width: 32em;
+  color: var(--muted);
+}
+.app-error button {
+  justify-self: center;
+}
+
+/* ---- Theme switch: circular reveal (View Transitions API) --------------- */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+::view-transition-new(root) {
+  animation: reveal 520ms var(--ease-in-out) both;
+}
+::view-transition-old(root) {
+  z-index: 0;
+}
+::view-transition-new(root) {
+  z-index: 1;
+}
+@keyframes reveal {
+  from {
+    clip-path: circle(0 at var(--reveal-x, 100%) var(--reveal-y, 0));
+  }
+  to {
+    clip-path: circle(var(--reveal-r, 150vmax) at var(--reveal-x, 100%) var(--reveal-y, 0));
+  }
+}
+
+/* ---- Keyframes ---------------------------------------------------------- */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes menu-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes sweep {
+  to {
+    background-size: 100% 100%;
+  }
+}
+@keyframes shimmer {
+  to {
+    transform: translateX(100%);
+  }
+}
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* ---- Reduced motion: one global switch ---------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+  .meaning-check blockquote mark {
+    background-size: 100% 100%;
+  }
+  .skeleton::after,
+  .welcome-caret {
+    display: none;
+  }
+}
+/* The in-app "Enable motion" setting behaves the same way. */
+html[data-motion="false"] *,
+html[data-motion="false"] *::before,
+html[data-motion="false"] *::after {
+  animation-duration: 0.001ms !important;
+  animation-delay: 0ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+}
+html[data-motion="false"] .meaning-check blockquote mark {
+  background-size: 100% 100%;
+}
+
+/* ---- Print: a clean, single-column, black-on-white page ----------------- */
+@media print {
+  .intro,
+  .chat-sidebar,
+  .chat-topbar,
+  .chat-bottom,
+  .chat-composer,
+  .message-actions,
+  .jump-latest,
+  .toast,
+  .palette-backdrop,
+  .skip,
+  .simple-header,
+  footer,
+  .prompt-cards,
+  .welcome-trust {
+    display: none !important;
+  }
+  html,
+  body,
+  .chat-app,
+  .chat-main,
+  .conversation-scroll,
+  .conversation-column {
+    display: block !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    position: static !important;
+    background: #fff !important;
+    color: #000 !important;
+  }
+  .conversation-column {
+    max-width: none !important;
+    padding: 0 !important;
+  }
+  .chat-message {
+    break-inside: avoid;
+    animation: none !important;
+  }
+  a {
+    color: #000;
+    text-decoration: underline;
+  }
+}

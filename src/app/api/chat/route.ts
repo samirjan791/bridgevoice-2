@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: gate.error }, { status: gate.status });
   let parsed;
   try {
-    const body = await limitedBody(req, 180000);
+    const body = await limitedBody(req, 4500000);
     parsed = chatRequestSchema.safeParse(
       JSON.parse(new TextDecoder().decode(body)),
     );

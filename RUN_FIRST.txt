@@ -1,17 +1,10 @@
-BRIDGEVOICE 2.0 — START HERE
+BridgeVoice 3.0 update: consult README.md and docs/v3/IMPLEMENTATION_REPORT.md for current status. Live-service, hardware and telephone acceptance remain unverified. Prior notes below describe the original build, not current readiness.
 
-1. Install Node.js 24 LTS, version 24.15 or newer: https://nodejs.org
-2. Extract bridgevoice-2.zip.
-3. In Mac Terminal:
+1. Extract the ZIP into Downloads.
+2. Stop the previous BridgeVoice server with Control+C.
+3. Paste into Terminal:
 
-   cd ~/Downloads/bridgevoice-2
-   bash start.sh
+cd "$HOME/Downloads/bridgevoice-live-animated" && bash START_WITH_EXISTING_KEY.command
 
-4. Open http://localhost:3000
-
-Your supplied logo is already in the app. Guided offline mode needs no key.
-For actual AI chat, follow README.md to put your Meta key privately in .env.local.
-Do not paste your API key into ChatGPT, source code, or the browser's Settings.
-
-Read KNOWN_LIMITATIONS.md. Live Meta, real microphone/browser behavior and deployment
-are not verified in this package. Do not use draft translations with clients without review.
+4. Open http://127.0.0.1:3000 once Terminal reports Ready.
+Keep Terminal open. Read README.md for voice requirements and unverified live acceptance checks.

@@ -1,0 +1,7 @@
+Byte-for-byte unchanged from the delivered 3.0 archive:
+src/lib/use-live-conversation.ts
+src/lib/use-speech.ts
+src/lib/use-voice-output.ts
+src/lib/chat/meta.ts
+src/app/api/chat/route.ts
+src/app/api/speech/route.ts

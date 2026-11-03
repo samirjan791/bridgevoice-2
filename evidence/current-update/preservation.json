@@ -1,0 +1,54 @@
+{
+  "baseArchive": "BridgeVoice-Unified-Logo-Photos-History-Voice(1).zip",
+  "missingFiles": [],
+  "changedExistingFiles": [
+    "README.md",
+    "tests/chat.test.ts",
+    "tests/ui.test.tsx",
+    "evidence/evaluation.json",
+    ".env.example",
+    "src/app/layout.tsx",
+    "src/app/privacy/page.tsx",
+    "src/app/globals.css",
+    "src/components/chat/ChatShell.tsx",
+    "src/components/chat/ChatMessage.tsx",
+    "src/components/providers.tsx",
+    "src/components/settings.tsx",
+    "src/lib/chat/offline.ts",
+    "src/lib/chat/meta.ts",
+    "src/lib/demo-provider.ts",
+    "src/lib/use-voice-output.ts",
+    "src/lib/glossary.ts",
+    "RUN_FIRST.txt"
+  ],
+  "brandAssets": [
+    {
+      "file": "public/brand/bridgevoice-unified.png",
+      "unchanged": true
+    },
+    {
+      "file": "public/brand/bridgevoice-app-icon.png",
+      "unchanged": true
+    },
+    {
+      "file": "public/brand/bridgevoice-mark.png",
+      "unchanged": true
+    },
+    {
+      "file": "public/brand/apple-touch-icon.png",
+      "unchanged": true
+    },
+    {
+      "file": "public/brand/bridge-symbol.svg",
+      "unchanged": true
+    },
+    {
+      "file": "public/brand/bridgevoice-approved.jpeg",
+      "unchanged": true
+    },
+    {
+      "file": "public/brand/favicon.png",
+      "unchanged": true
+    }
+  ]
+}

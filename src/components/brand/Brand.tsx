@@ -1,22 +1,18 @@
-import Image from "next/image";
+import { RobotAvatar } from "./RobotAvatar";
 export function Brand({ full = false }: { full?: boolean }) {
   if (full)
     return (
       <div className="full-brand">
-        <Image
-          src="/brand/bridgevoice-approved.jpeg"
-          alt="BridgeVoice: two people wearing headsets, connected by a bridge and speech waves"
-          width={1254}
-          height={1254}
-          priority
-        />
+        <RobotAvatar size={240} />
+        <small className="robot-meta-label">Powered by Meta</small>
       </div>
     );
   return (
     <span className="v2-wordmark">
-      <Image src="/brand/bridge-symbol.svg" alt="" width={35} height={35} />
+      <RobotAvatar size={28} />
       <span>
         Bridge<span>Voice</span>
+        <small className="robot-meta-label">Powered by Meta</small>
       </span>
     </span>
   );

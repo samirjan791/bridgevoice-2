@@ -1,0 +1,8 @@
+/* Shared durations and easing for every animated surface. */
+:root { --motion-fast: 160ms; --motion-enter: 320ms; --motion-ease: cubic-bezier(.22,1,.36,1); }
+button, a, input, select, textarea { transition-duration: var(--motion-fast); transition-timing-function: var(--motion-ease); }
+@keyframes chat-enter { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:none; } }
+.chat-app[data-enter="true"] .conversation-column { animation: chat-enter var(--motion-enter) var(--motion-ease) both; }
+.chat-app[data-enter="true"] .chat-bottom { animation: chat-enter var(--motion-enter) var(--motion-ease) 70ms both; }
+@media(prefers-reduced-motion:reduce) { *,*::before,*::after { animation-duration:0.01ms!important; animation-iteration-count:1!important; transition-duration:0.01ms!important; scroll-behavior:auto!important; } }
+[data-motion="false"] *,[data-motion="false"] *::before,[data-motion="false"] *::after { animation:none!important; transition:none!important; scroll-behavior:auto!important; }

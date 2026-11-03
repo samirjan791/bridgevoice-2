@@ -2,6 +2,8 @@
 import { AudioLines, Pause, Play, Square, ArrowLeft, Mic } from "lucide-react";
 import { Language, packs } from "@/lib/languages";
 export function BridgeMode({
+  speaker = "Person A",
+  onSpeaker,
   source,
   target,
   onSource,
@@ -14,6 +16,8 @@ export function BridgeMode({
   onMic,
   micSupported,
 }: {
+  speaker?: "Person A" | "Person B";
+  onSpeaker?: (speaker:"Person A"|"Person B")=>void;
   source: Language;
   target: Language;
   onSource: (l: Language) => void;
@@ -31,7 +35,7 @@ export function BridgeMode({
       <div className="bridge-mode-title">
         <AudioLines size={20} />
         <div>
-          <b>Bridge Mode</b>
+          <b>BridgeMode · {speaker} speaking</b>
           <small>
             {listening
               ? "Microphone listening · English"
@@ -45,9 +49,11 @@ export function BridgeMode({
           Return to chat
         </button>
       </div>
+      <p>AI interpretation · one shared microphone. Choose whose turn it is; no automatic speaker identification.</p>
+      {onSpeaker&&<div className="participant-turns">{(["Person A","Person B"] as const).map(p=><button key={p} aria-pressed={speaker===p} onClick={()=>onSpeaker(p)}>{p}’s turn · {packs[p===speaker?source:target].native}</button>)}</div>}
       <div className="bridge-mode-controls">
         <label>
-          From
+          {speaker} language
           <select
             aria-label="Source language"
             value={source}
@@ -63,7 +69,7 @@ export function BridgeMode({
         </label>
         <span>→</span>
         <label>
-          To
+          {speaker==="Person A"?"Person B":"Person A"} language
           <select
             aria-label="Bridge target language"
             value={target}
@@ -97,7 +103,7 @@ export function BridgeMode({
       </div>
       <small>
         English speech is browser-dependent. Pashto and Dari use typed input.
-        Nothing is automatically spoken or forwarded.
+        Enable spoken translations below when a matching voice is available. Nothing is forwarded to another person.
       </small>
     </section>
   );

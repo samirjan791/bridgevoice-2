@@ -1,3 +1,4 @@
+import { userFollowUps } from "./follow-ups";
 import { ChatRequest, ChatModel, ChatResult } from "./schema";
 import { effectiveTask } from "./router";
 import { checkGuard } from "../guard";
@@ -36,7 +37,9 @@ export function finalizeResult(
     });
   return {
     ...model,
+    followUps: userFollowUps(model.followUps,r.language),
     sourcePassage: original,
+    reviewedTranslation: r.proposed || model.translation,
     sources,
     warnings,
     provider,

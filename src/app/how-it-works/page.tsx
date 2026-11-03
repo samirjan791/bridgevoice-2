@@ -15,8 +15,8 @@ export default function Page() {
       <section>
         <h2>Connect meaning</h2>
         <p>
-          Guided offline mode offers bounded glossary assistance and local
-          checks. Live Meta mode sends authorized context to the server, which
+          An internet connection and a valid Meta key are required.
+          Chat sends authorized context to the server, which
           calls Meta’s Responses API. Streaming text is provisional until the
           structured response passes validation. Stopping generation discards an
           incomplete draft.

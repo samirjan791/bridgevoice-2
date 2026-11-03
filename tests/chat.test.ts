@@ -9,7 +9,7 @@ import {
 import { partialAnswer, sseData } from "@/lib/chat/sse";
 import { finalizeResult } from "@/lib/chat/result";
 import { metaChat, buildPayload } from "@/lib/chat/meta";
-import { offlineChat } from "@/lib/chat/offline";
+import { apiResult } from "./helpers/api-result";
 const req = () =>
   chatRequestSchema.parse({
     message: "What does dosage mean?",
@@ -126,7 +126,7 @@ describe("conversation orchestration", () => {
     expect(r.sources).toHaveLength(1);
   });
   it("runs MeaningGuard on submitted translation", () => {
-    const r = offlineChat({
+    const r = apiResult({
       ...req(),
       task: "compare",
       original: "Do not take 2 tablets.",
@@ -134,33 +134,17 @@ describe("conversation orchestration", () => {
     });
     expect(r.checks.map((x) => x.id)).toContain("negation-mismatch");
     expect(r.checks.map((x) => x.id)).toContain("number-mismatch");
-    expect(r.provider).toContain("Offline");
+    expect(r.provider).toContain("Meta");
   });
-  it("uses previous question for an offline follow-up", () => {
-    const r = offlineChat({
-      ...req(),
-      message: "Give me an example.",
-      messages: [{ role: "user", content: "What does dosage mean?" }],
-    });
-    expect(r.answer).toContain("Example:");
-    expect(r.termsSaved.length).toBeGreaterThan(0);
+  it("passes prior context to the real adapter payload", () => {
+    const payload=buildPayload({...req(),messages:[{role:"user",content:"What does dosage mean?"}],message:"Give me an example."},"test-model");
+    expect(JSON.stringify(payload)).toContain("What does dosage mean?");
   });
-  it("simple level changes the offline answer", () => {
-    expect(
-      offlineChat({ ...req(), message: "dosage and allergy", level: "simple" })
-        .answer.length,
-    ).toBeLessThan(
-      offlineChat({
-        ...req(),
-        message: "dosage and allergy",
-        level: "detailed",
-      }).answer.length,
-    );
+  it("passes explanation levels to the API rather than generating a sample", () => {
+    expect(JSON.stringify(buildPayload({...req(),level:"simple"},"test-model"))).toContain("simple");
+    expect(JSON.stringify(buildPayload({...req(),level:"detailed"},"test-model"))).toContain("detailed");
   });
-  it("does not masquerade general offline output as live AI", () =>
-    expect(
-      offlineChat({ ...req(), message: "Tell me a new story" }).answer,
-    ).toContain("Guided offline mode"));
+
 });
 describe("SSE protocol and Meta adapter (mocked transport)", () => {
   it("extracts only answer text from partial JSON", () => {
@@ -191,7 +175,7 @@ describe("SSE protocol and Meta adapter (mocked transport)", () => {
     const payload = buildPayload(req(), "test-model");
     expect(payload.store).toBe(false);
     expect(payload.stream).toBe(true);
-    expect(JSON.parse(payload.input).conversation).toEqual([]);
+    expect(JSON.parse(payload.input as string).conversation).toEqual([]);
     expect(payload.instructions).toContain("untrusted DATA");
   });
   it("validates a completed streamed result and counts tokens", async () => {

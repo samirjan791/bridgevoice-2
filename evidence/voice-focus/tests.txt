@@ -1,0 +1,52 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> bridgevoice-2@3.1.0 test
+> vitest run
+
+
+ RUN  v3.2.7 /workspace/scratch/04753902654d/bridgevoice-3-work/bridgevoice-live-animated
+
+ ✓ tests/voice-meter.test.tsx (3 tests) 202ms
+ ✓ tests/voice-bridge.test.tsx (5 tests) 219ms
+ ✓ tests/history-search.test.tsx (3 tests) 188ms
+ ✓ tests/motion.test.tsx (12 tests) 293ms
+stderr | tests/layout-controls.test.tsx > suggestions send complete examples and the document chip opens its picker
+You have Reduced Motion enabled on your device. Animations may not appear as expected.. For more information and steps for solving, visit https://motion.dev/troubleshooting/reduced-motion-disabled
+
+stderr | tests/ui.test.tsx > accessible chat components > uses the approved logo on the welcome screen and requires Meta without a fallback mode
+You have Reduced Motion enabled on your device. Animations may not appear as expected.. For more information and steps for solving, visit https://motion.dev/troubleshooting/reduced-motion-disabled
+
+ ✓ tests/documents.test.ts (8 tests) 621ms
+   ✓ extracts a real text PDF  543ms
+ ✓ tests/proof-ui-v3.test.tsx (3 tests) 133ms
+ ✓ tests/meaning-check.test.tsx (16 tests) 158ms
+ ✓ tests/chat.test.ts (32 tests) 554ms
+   ✓ SSE protocol and Meta adapter (mocked transport) > retries transient rate limits then succeeds  508ms
+ ✓ tests/calls-v3.test.ts (10 tests) 25ms
+ ✓ tests/core.test.ts (37 tests) 32ms
+stderr | tests/layout-controls.test.tsx > history toggle and deletion operate on local storage
+Not implemented: navigation to another Document
+
+ ✓ tests/voice-update.test.ts (11 tests) 35ms
+ ✓ tests/routes.test.ts (9 tests) 26ms
+ ✓ tests/layout-controls.test.tsx (11 tests) 1040ms
+ ✓ tests/ui.test.tsx (15 tests) 1022ms
+   ✓ accessible chat components > uses the approved logo on the welcome screen and requires Meta without a fallback mode  337ms
+ ✓ tests/proof-route-v3.test.ts (4 tests) 20ms
+ ✓ tests/proof-v3.test.ts (12 tests) 14ms
+ ✓ tests/evaluation.test.ts (1 test) 10ms
+ ✓ tests/capabilities-v3.test.ts (3 tests) 2ms
+ ✓ tests/voice-conversation.test.tsx (13 tests) 4709ms
+   ✓ starts listening on open and sends then speaks without any send tap  809ms
+   ✓ speaking interrupts playback and the next turn sends  694ms
+   ✓ cancels a pending send when closed and returns to typing  749ms
+   ✓ mute suppresses playback while turns still send  674ms
+   ✓ failed requests stop the session and offer a real retry  673ms
+   ✓ denied microphone never sends a pending utterance  717ms
+   ✓ silence restarts listening without sending an empty turn  319ms
+
+ Test Files  19 passed (19)
+      Tests  208 passed (208)
+   Start at  22:34:45
+   Duration  6.03s (transform 1.62s, setup 0ms, collect 4.95s, tests 9.30s, environment 5.11s, prepare 1.18s)
+

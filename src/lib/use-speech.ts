@@ -25,7 +25,9 @@ type SpeechWindow = Window & {
   SpeechRecognition?: new () => Recognition;
   webkitSpeechRecognition?: new () => Recognition;
 };
-export function useSpeech(onFinal: (text: string) => void) {
+export function useSpeech(onFinal: (text: string) => void, onTurnEnd?: (failed: boolean) => void, onActivity?: (text: string) => void) {
+  const activity=useRef(onActivity);activity.current=onActivity;
+  const ended = useRef(onTurnEnd); ended.current = onTurnEnd;
   const callback = useRef(onFinal);
   callback.current = onFinal;
   const recognition = useRef<Recognition | null>(null);
@@ -38,18 +40,22 @@ export function useSpeech(onFinal: (text: string) => void) {
     setSupported(!!(w.SpeechRecognition || w.webkitSpeechRecognition));
     return () => {
       if (recognition.current) {
-        recognition.current.onend = null;
-        recognition.current.abort();
+        const active = recognition.current;
+        recognition.current = null;
+        active.onend = null;
+        active.abort();
       }
     };
   }, []);
   function stop() {
-    recognition.current?.abort();
+    const active = recognition.current;
     recognition.current = null;
+    active?.abort();
     setListening(false);
     setInterim("");
   }
-  function start() {
+  function finish() { recognition.current?.stop(); }
+  function start(language: string = "en-US", singleTurn = false) {
     if (recognition.current) return;
     const w = window as SpeechWindow,
       C = w.SpeechRecognition || w.webkitSpeechRecognition;
@@ -60,19 +66,27 @@ export function useSpeech(onFinal: (text: string) => void) {
       return;
     }
     const r = new C();
-    r.lang = "en-US";
-    r.continuous = true;
+    r.lang = language;
+    r.continuous = !singleTurn;
+    let failed = false;
+    const finalized = new Set<number>();
     r.interimResults = true;
     r.onstart = () => {
+      if (recognition.current !== r) return;
       setListening(true);
       setError("");
     };
     r.onend = () => {
+      if (recognition.current !== r) return;
       setListening(false);
       recognition.current = null;
       setInterim("");
+      ended.current?.(failed);
     };
     r.onerror = (e) => {
+      if (recognition.current !== r) return;
+      if(e.error === "no-speech") return;
+      failed = true;
       setError(
         e.error === "not-allowed"
           ? "Microphone permission denied. Allow microphone access or use text input."
@@ -82,11 +96,15 @@ export function useSpeech(onFinal: (text: string) => void) {
       );
     };
     r.onresult = (e) => {
+      if (recognition.current !== r) return;
       let partial = "";
+      const heard=Array.from(e.results).slice(e.resultIndex).map(r=>r[0].transcript).join(" ");
+      const fresh=Array.from(e.results).slice(e.resultIndex).some((r,i)=>!r.isFinal||!finalized.has(i+e.resultIndex));
+      if(heard.trim()&&fresh)activity.current?.(heard);
       for (let i = e.resultIndex; i < e.results.length; i++) {
         const result = e.results[i];
-        if (result.isFinal) callback.current(result[0].transcript);
-        else partial += result[0].transcript;
+        if (result.isFinal && !finalized.has(i)) { finalized.add(i); callback.current(result[0].transcript); }
+        else if (!result.isFinal) partial += result[0].transcript;
       }
       setInterim(partial);
     };
@@ -96,7 +114,8 @@ export function useSpeech(onFinal: (text: string) => void) {
     } catch {
       stop();
       setError("Microphone could not start. Use text input or retry.");
+      ended.current?.(true);
     }
   }
-  return { listening, interim, error, supported, start, stop };
+  return { listening, interim, error, supported, start, stop, finish };
 }

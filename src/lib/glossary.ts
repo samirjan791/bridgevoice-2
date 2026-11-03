@@ -5,7 +5,7 @@ export const glossary = data as Entry[];
 export function matchGlossary(text: string, language: Language = "en") {
   const lower = text.toLocaleLowerCase();
   return glossary.filter((e) => {
-    const term = e[language].toLocaleLowerCase();
+    const term = (e[language] || "").toLocaleLowerCase();
     if (!term) return false;
     if (language !== "en") return lower.includes(term);
     const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");

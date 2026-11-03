@@ -1,0 +1,1 @@
+PASS: placeholder rejection; no donor; selective recovery; unrelated settings preserved; private file/backup permissions; existing key preserved; ambiguous keys cause no mutation; path containing spaces. No real credentials used.

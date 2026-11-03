@@ -1,0 +1,5 @@
+Final execution: npm test
+Vitest v3.2.7
+7 files passed, 112 tests passed. Exit code 0.
+core 38; routes 9; documents 8; chat 33; evaluation 1; ui 12; voice-update 11.
+Native browser speech and real Azure requests were not exercised. Provider audio tests use mocked transport.

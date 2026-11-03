@@ -1,0 +1,1 @@
+PASS: placeholder rejection, no donor, recovery, private permissions, existing-key preservation, backup. Temporary fixtures only; no real credentials used.

@@ -1,0 +1,4 @@
+Source and bundled original video are byte-for-byte identical.
+Duration: 2.966667 seconds
+Dimensions: 512 x 628
+SHA256: 4a0bc9d981391ed7318d3bde4d81ccdac8beaea5bb38c6c756260f96f0572429

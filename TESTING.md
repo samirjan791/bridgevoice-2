@@ -1,3 +1,5 @@
+BridgeVoice 3.0 update: consult README.md and docs/v3/IMPLEMENTATION_REPORT.md for current status. Live-service, hardware and telephone acceptance remain unverified. Prior notes below describe the original build, not current readiness.
+
 # Verification evidence
 
 Executed in this build on 10/24/2026 with Node 24.19.0. Raw command output is in `evidence/`.

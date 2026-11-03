@@ -1,0 +1,30 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> bridgevoice-2@2.0.0 test
+> vitest run
+
+
+ RUN  v3.2.7 /workspace/scratch/ae8c6c0f478e/bridgevoice-meaning-check
+
+ ✓ tests/evaluation.test.ts (1 test) 44ms
+ ✓ tests/routes.test.ts (9 tests) 58ms
+ ✓ tests/core.test.ts (38 tests) 72ms
+ ✓ tests/voice-update.test.ts (11 tests) 90ms
+ ✓ tests/chat.test.ts (33 tests) 610ms
+   ✓ SSE protocol and Meta adapter (mocked transport) > retries transient rate limits then succeeds  509ms
+ ✓ tests/documents.test.ts (8 tests) 972ms
+   ✓ extracts a real text PDF  866ms
+ ✓ tests/voice-conversation.test.tsx (6 tests) 250ms
+ ✓ tests/meaning-check.test.tsx (16 tests) 278ms
+stderr | tests/ui.test.tsx > accessible chat components > uses the approved logo on the welcome screen and shows offline mode honestly
+You have Reduced Motion enabled on your device. Animations may not appear as expected.. For more information and steps for solving, visit https://motion.dev/troubleshooting/reduced-motion-disabled
+
+ ✓ tests/ui.test.tsx (13 tests) 1419ms
+   ✓ accessible chat components > uses the approved logo on the welcome screen and shows offline mode honestly  402ms
+   ✓ accessible chat components > sends a question, saves terminology, and clears the session  414ms
+
+ Test Files  9 passed (9)
+      Tests  135 passed (135)
+   Start at  18:00:07
+   Duration  4.63s (transform 1.42s, setup 0ms, collect 4.26s, tests 3.79s, environment 3.21s, prepare 1.26s)
+

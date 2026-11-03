@@ -1,4 +1,5 @@
 "use client";
+import { BridgeProof } from "../proof/BridgeProof";
 import { useState } from "react";
 import { ShieldCheck } from "lucide-react";
 import { ChatResult } from "@/lib/chat/schema";
@@ -19,9 +20,11 @@ export function MeaningGuardCard({
     })),
     ...result.warnings.map((w, i) => ({ ...w, id: "semantic-" + i })),
   ];
-  if (!items.length) return null;
+  const reviewedTranslation=result.reviewedTranslation??result.translation;
+  const proof=result.sourcePassage && reviewedTranslation ? <BridgeProof source={result.sourcePassage} translation={reviewedTranslation} from={result.sourceLanguage} to={result.targetLanguage}/> : null;
+  if (!items.length) return proof;
   return (
-    <details
+    <>{proof}<details
       className="meaningguard"
       open={items.some((w) => w.priority === "critical")}
     >
@@ -82,6 +85,6 @@ export function MeaningGuardCard({
           states are session-only.
         </small>
       </div>
-    </details>
+    </details></>
   );
 }

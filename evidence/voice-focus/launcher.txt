@@ -1,0 +1,4 @@
+PASS: bash syntax validation
+PASS: copies configured previous project into empty new project
+PASS: preserves already configured new project
+All credentials in these checks were fictional local test values. Launcher npm/network phase not executed in this fixture.

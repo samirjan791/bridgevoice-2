@@ -5,3 +5,6 @@ Prepared on 10/24/2026, before the stated official build window starting 10/26/2
 The supplied portrait logo was copied without alteration to public/brand/bridgevoice-approved.jpeg. The simplified bridge companion SVG was created for small icons. This record is not proof of competition eligibility. Keep the original archive, source history and timestamped build evidence; ask the organizer whether preparatory assets/code may be reused and disclose them.
 
 Actual verification and unresolved external requirements are recorded in TESTING.md and KNOWN_LIMITATIONS.md. No live Meta request, deployment or browser validation is asserted.
+
+
+10/25/2026: merged MASTER_PROMPT with current source; added corner history search, accessible search dialog, opt-in hands-free voice turns, background pause, selective configuration migration. This is pre-event preparation, not an eligibility claim. See evidence/ready.

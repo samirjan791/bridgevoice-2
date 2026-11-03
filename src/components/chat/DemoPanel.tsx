@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { Play, Pause, RotateCcw, ChevronRight } from "lucide-react";
 import { demos } from "@/data/demos";
 export function DemoPanel({
@@ -24,7 +25,7 @@ export function DemoPanel({
   return (
     <section className="v2-demo-panel">
       <div>
-        <span className="demo-label">FICTIONAL DEMO · NO REAL CLIENT DATA</span>
+        <span className="demo-label">FICTIONAL INPUT · LIVE META API REQUIRED</span>
         <select
           aria-label="Demo scenario"
           value={scenario}
@@ -36,7 +37,7 @@ export function DemoPanel({
             </option>
           ))}
         </select>
-        <p>{d.objective}</p>
+        <p>{d.objective}</p><Link href="/bridge-call">BridgeCall lab · simulated telephone routing</Link>
       </div>
       <div className="demo-buttons">
         <button className="primary" onClick={onPlay} disabled={disabled}>

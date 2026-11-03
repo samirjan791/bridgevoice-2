@@ -1,90 +1,68 @@
-# BridgeVoice 2.0 — The Human Connection Engine
+# BridgeVoice 3.4.1 — compact mobile input
 
-**Every Voice Deserves to Be Understood.** Founder: Mohammad Samir Abdulrahimzai.
+Focused mobile input now uses a compact two-row layout without the heavy blue halo. It remains at the bottom of the visible viewport and grows with text. Original video and Meta integration are unchanged.
 
-A chat-first communication assistant for English, Pashto and Dari: terminology explanations, translation suggestions, Meaning Mirror, local MeaningGuard checks, Bridge Mode, documents and personal glossary. The approved image supplied by the founder appears on the chat welcome screen and About page; a simplified bridge symbol is the small app icon.
+Extract into Downloads, run `cd "$HOME/Downloads/bridgevoice-3.4.1"`, then `bash START_VOICE_UPDATE.command`. Open http://127.0.0.1:3002 after Ready.
 
-## Start on your Mac
+See COMPACT_COMPOSER_UPDATE.md for scope and verification.
 
-1. Install Node.js **24 LTS, version 24.15 or newer** from https://nodejs.org.
-2. Extract this ZIP. Open Terminal:
+# BridgeVoice 3.4 — mobile composer, attachment cards, original video
 
-```bash
-cd ~/Downloads/bridgevoice-2
-bash start.sh
-```
+Current release: the phone composer sits at the bottom and expands above the keyboard when focused. Photos and documents appear as removable cards inside the composer. The profile uses the latest uploaded ORIGINAL 2.966667-second video, at normal speed, silently looping. No generated portrait or artificial mouth animation is displayed. Meta API behavior and the credential-preserving launcher remain.
 
-3. Open http://localhost:3000. Leave Terminal running. Control+C stops it.
+Extract into Downloads and run `cd "$HOME/Downloads/bridgevoice-3.4"` then `bash START_VOICE_UPDATE.command`. Open http://127.0.0.1:3002 after Ready. See MOBILE_ATTACHMENTS_UPDATE.md. Earlier sections below describe release history.
 
-The initial install downloads npm dependencies. No API key is needed for the guided offline tools. If the folder is elsewhere, type `cd ` and drag the extracted folder into Terminal, then press Enter. The alternative `START_BRIDGEVOICE.command` starts the same script.
+# BridgeVoice 3.3 — front-facing animated robot
 
-## What is implemented
+This release replaces the side-facing profile footage with a generated frontal view of the original visor-wearing android design, inspired by the supplied video. Subtle idle motion and a subtle mouth animation use CSS. Mouth movement runs during actual speech playback, stopping on mute, pause, interruption, completion and errors. It is not phoneme-level lip sync. Meta translation, keys and routes are preserved.
 
-- Responsive chat interface, supplied portrait logo, small companion icon, light/dark theme, reduced motion, high contrast and larger text.
-- Typed chat, context-bounded follow-ups, edit/resend, retry, stop, copy, feedback, dismissal and export. Actual Meta streaming is provisional until JSON validation succeeds.
-- English/Pashto/Dari language metadata, RTL output, localized main chat labels; advanced controls and legal pages remain English.
-- Meaning Mirror: original/translation comparison, local quantities/units/negation checks and optional Meta semantic review. Review → resolve or dismiss; correction notes stay in-session.
-- Bridge Mode: typed segments and browser-dependent English speech, pause/stop/return, no automatic outgoing speech.
-- Browser speech input and matching-voice read-aloud; no audio recording storage. Pashto/Dari speech recognition is not enabled.
-- 120 explicitly unreviewed draft glossary entries, search, category and displayed-language selection, edit, notes, favorites, duplicate handling, import JSON, export JSON/CSV and print.
-- Six fictional demo scenarios. Guided offline responses are deterministic glossary/rule outputs, not general AI. Live Meta sends fictional samples to the real adapter.
-- PDF, DOCX and UTF-8 TXT extraction on the server (4 MB, 30 pages, 24,000 text characters). No OCR. Fictional test files are in `public/examples`.
-- Optional local history (off by default), new chat and deletion controls. No accounts, Supabase, Firebase or payments.
+Run `bash START_VOICE_UPDATE.command` inside the extracted folder. Open http://127.0.0.1:3002 after Ready. See ROBOT_FRONT_UPDATE.md for details.
 
-## Enable real Meta AI
+# BridgeVoice 3.2 — animated robot profile
 
-The adapter follows the official Meta Responses protocol checked during this build:
+Unzip this build, then run `bash START_VOICE_UPDATE.command` inside its folder. Open http://127.0.0.1:3002 when Terminal says Ready. The launcher preserves existing Meta configuration or copies it from a configured BridgeVoice folder in Downloads; it does not print keys. See ROBOT_PROFILE_UPDATE.md for changes and verification.
 
-- https://dev.meta.ai/docs/quickstart
-- https://dev.meta.ai/docs/protocols/responses
-- `POST https://api.meta.ai/v1/responses`, Bearer authorization, `muse-spark-1.3`, `store:false`, SSE `response.output_text.delta` and `response.completed`.
+# BridgeVoice 3.1
 
-Obtain access through Meta's official developer portal or the hackathon's official onboarding. Availability is controlled by Meta. The application cannot create your credentials or guarantee access.
+**Don’t just translate words. Protect meaning.**
 
-```bash
-cp .env.example .env.local
-nano .env.local
-```
+A targeted upgrade of the supplied BridgeVoice 2.1.0 Next.js application. This is a controlled multilingual communication prototype, not a medical safety system or production telephone interpreter.
 
-Set `MODEL_API_KEY` privately. The application also accepts `META_API_KEY` as an alias. Keep `META_API_BASE_URL=https://api.meta.ai/v1`; other endpoints are rejected. Set `META_MODEL_ID` only to a model your Meta account supports. Restart the server, select **Live Meta**, affirm permission, and send fictional text. Only a successfully validated response sets the UI to Connected. Never paste a key in chat or commit `.env.local`.
+The existing Meta chat, glossary, document/photo flow, local history, themes, RTL interface, writing intro and voice controls remain. New work adds BridgeProof pattern checks and a separate optional Meta review, explicit two-person turns, a state-driven Living Bridge, browser capability reporting and a labeled local BridgeCall routing lab.
 
-Optional `BRIDGEVOICE_ACCESS_TOKEN` protects server routes for a private demo; enter that separate access code in Settings. Optional token price variables calculate an estimate from actual reported usage; no price is assumed.
+## Follow-up suggestions
 
-**No genuine authenticated Meta call was executed for this delivery because credentials were unavailable. Mocked transport tests are not proof of live integration.**
+Suggestions now represent requests from you, not questions the AI asks you. Clicking sends the displayed message with conversation context. See [follow-up update](FOLLOW_UP_UPDATE.md).
 
-## Commands
+## Voice-screen update
 
-```bash
+Minimal full-screen voice layout, controls at the bottom, language/privacy options behind Voice settings, a genuine microphone waveform, aligned sidebar navigation and a polished opening bridge sequence. Meta and voice orchestration are unchanged. See [update report](VOICE_FOCUS_UPDATE.md).
+
+On macOS, extract into Downloads and run `cd ~/Downloads/bridgevoice-3.1` then `bash START_VOICE_UPDATE.command`. The launcher preserves an existing configured key, or copies the newest configured BridgeVoice `.env.local` from Downloads. It starts on http://127.0.0.1:3002. Existing projects remain untouched.
+
+## Run locally
+
+Install Node.js 24.15+ and npm. Extract the archive, then:
+
+```sh
+cd ~/Downloads/bridgevoice-3.1
 npm ci
+# Copy only if you do not already have .env.local:
+[ -f .env.local ] || cp .env.example .env.local
 npm run dev
-npm test
-npm run typecheck
-npm run lint
-npm run build
-npm start
 ```
 
-Browser tests for your own local machine:
+Open http://127.0.0.1:3000. Configure your existing Meta key privately in `.env.local` and restart. Do not put a key in chat, a screenshot, public source, or NEXT_PUBLIC variables. An unconfigured app shows honest connection errors rather than sample AI answers. The archive contains no private key.
 
-```bash
-npx playwright install chromium
-npm run test:e2e
-```
+## Evidence and delivery guide
 
-Do not interpret unexecuted browser tests as passing. See TESTING.md for actual evidence and limits.
+- [Implementation report](docs/v3/IMPLEMENTATION_REPORT.md): feature-by-feature status and remaining work.
+- [Architecture](ARCHITECTURE.md): actual flow and separate proposed telephone gateway.
+- [Local development and environment](docs/v3/LOCAL_DEVELOPMENT.md).
+- [Deployment](docs/v3/DEPLOYMENT.md).
+- [Telecommunications integration](docs/v3/TELECOM_GUIDE.md).
+- [Competition demonstration](docs/v3/DEMO_SCRIPT.md).
+- [Testing and regression checklist](docs/v3/TEST_REPORT.md).
+- [Exact changed files](docs/v3/CHANGED_FILES.md).
 
-## Deployment
-
-This is a Node/Next.js source distribution, not a static site. Use a Next.js-compatible Node host such as Vercel, configure private environment variables there, and use `npm run build`. See SETUP.md. No public deployment or repository URL was created in this delivery. Real AI, microphone, browser visual QA and production smoke verification remain required before submission.
-
-## Privacy and limitations
-
-By default messages and document text are session-only. Saved glossary/preferences persist locally; enabling history explicitly saves up to 20 conversations. Browser recognition may use external speech services. Live Meta sends bounded conversation context and document excerpts externally. Documents are processed in server memory. `store:false` is not a universal provider-retention guarantee.
-
-All glossary translations are unreviewed drafts. No professional translation accuracy, HIPAA compliance, WCAG certification, medical/legal certification or competition eligibility is claimed. MeaningGuard's simple rules miss semantic errors and can produce false positives. Read KNOWN_LIMITATIONS.md before client use.
-
-## Stack and structure
-
-Next.js App Router, React, TypeScript, Zod, Motion, Lucide, React Markdown, pdf-parse and Mammoth. Standard CSS implements the design system without adding Tailwind infrastructure. Local browser storage implements glossary/history without accounts.
-
-`src/components/chat`: chat UI; `src/lib/chat`: orchestration, schemas, providers and history; `src/lib/guard.ts`: deterministic checks; `src/lib/documents`: text extraction; `src/app/api`: secure server routes; `src/data`: fictional demos and glossary; `tests`: unit, integration, component and optional browser suites.
+Original source hashes and baseline logs are in `evidence/v3-baseline`; updated check logs are in `evidence/v3`. Older release notes describe historical builds, not current readiness. The v3 reports take precedence.

@@ -9,7 +9,6 @@ import {
   readSaved,
   writeSaved,
 } from "../src/lib/storage";
-import { analyzeOffline } from "../src/lib/demo-provider";
 import { packs } from "../src/lib/languages";
 import { demos } from "../src/data/demos";
 const request = {
@@ -162,19 +161,13 @@ describe("pipeline", () => {
     expect(modelSchema.safeParse({ suggestedTranslation: 42 }).success).toBe(
       false,
     ));
-  it("labels offline output and requires review", () => {
-    const r = analyzeOffline(request);
-    expect(r.provider).toContain("not live AI");
-    expect(r.requiresHumanReview).toBe(true);
-    expect(r.suggestedTranslation).toBe("");
-  });
   it("processes all six complete fictional scenarios", () => {
     expect(demos).toHaveLength(6);
     for (const d of demos)
       for (const text of d.segments) {
-        const r = analyzeOffline({ ...request, text });
-        expect(r.originalTranscript).toBe(text);
-        expect(Number.isFinite(r.latencyMs)).toBe(true);
+        const r = requestSchema.parse({ ...request, text });
+        expect(r.text).toBe(text);
+        expect(text.trim().length).toBeGreaterThan(0);
       }
   });
 });

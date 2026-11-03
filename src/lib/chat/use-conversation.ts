@@ -7,7 +7,6 @@ import {
   chatResultSchema,
 } from "./schema";
 import { boundedContext } from "./router";
-import { offlineChat } from "./offline";
 import { sseData } from "./sse";
 export function useConversation(notify: (s: string) => void) {
   const [messages, setMessages] = useState<ChatMessage[]>([]),
@@ -21,7 +20,7 @@ export function useConversation(notify: (s: string) => void) {
     last = useRef<{
       request: ChatRequest;
       base: ChatMessage[];
-      provider: "offline" | "meta";
+      provider: "meta";
     } | null>(null);
   useEffect(
     () => () => {
@@ -45,10 +44,11 @@ export function useConversation(notify: (s: string) => void) {
   }
   async function send(
     input: Omit<ChatRequest, "messages">,
-    provider: "offline" | "meta",
+    provider: "meta",
     override?: ChatMessage[],
   ) {
     if (inFlight.current || !input.message.trim()) return false;
+    if (navigator.onLine === false) { setError("Internet connection required. Reconnect and try again. Your draft is preserved."); setConnection("Disconnected"); return false; }
     let base = override ?? messages;
     if (base.at(-1)?.role === "user" && base.at(-1)?.content === input.message)
       base = base.slice(0, -1);
@@ -64,6 +64,7 @@ export function useConversation(notify: (s: string) => void) {
       id: crypto.randomUUID(),
       role: "user",
       content: input.message,
+      speaker: input.speaker,
       created: Date.now(),
     };
     setMessages([...base, user]);
@@ -75,8 +76,7 @@ export function useConversation(notify: (s: string) => void) {
     abort.current = new AbortController();
     let result: ChatResult | undefined;
     try {
-      if (provider === "offline") result = offlineChat(request);
-      else {
+      {
         setConnection("Connecting");
         const response = await fetch("/api/chat", {
           method: "POST",
@@ -165,6 +165,14 @@ export function useConversation(notify: (s: string) => void) {
       },
     ]);
   }
+  function updateMessage(id: string, content: string) {
+    if (inFlight.current || !content.trim()) return;
+    setMessages((old) => old.map((m) => m.id === id ? { ...m, content: content.trim() } : m));
+  }
+  function deleteMessage(id: string) {
+    if (inFlight.current) return;
+    setMessages((old) => old.filter((m) => m.id !== id));
+  }
   function feedback(id: string, value: "helpful" | "needs-review") {
     setMessages((old) =>
       old.map((m) => (m.id === id ? { ...m, feedback: value } : m)),
@@ -182,6 +190,8 @@ export function useConversation(notify: (s: string) => void) {
     retry,
     localReply,
     feedback,
+    updateMessage,
+    deleteMessage,
     setError,
   };
 }

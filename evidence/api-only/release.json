@@ -1,0 +1,25 @@
+{
+  "testsPassed": 141,
+  "testFiles": 10,
+  "typecheck": "passed",
+  "lint": "passed",
+  "build": "passed",
+  "startup": "passed",
+  "brandAssets": "unchanged",
+  "removed": [
+    "offline response provider",
+    "legacy fixture provider",
+    "mode selector",
+    "standalone guided example"
+  ],
+  "preserved": [
+    "saved data formats",
+    "Meta configuration recovery",
+    "voice",
+    "uploads",
+    "glossary",
+    "safety checks"
+  ],
+  "liveMeta": "not tested here; owner credentials required",
+  "browserDeviceQA": "not executed"
+}

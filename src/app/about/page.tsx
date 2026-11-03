@@ -3,7 +3,7 @@ export default function Page() {
   return (
     <article className="page-wrap narrow prose">
       <Brand full />
-      <span className="eyebrow">BRIDGEVOICE 2.0</span>
+      <span className="eyebrow">BRIDGEVOICE 3.4</span>
       <h1>Every voice deserves to be understood.</h1>
       <section>
         <h2>The human connection engine</h2>
@@ -35,8 +35,8 @@ export default function Page() {
         <p>
           This is a downloadable demonstration build. No professional
           certification, competition eligibility or live deployment is claimed.
-          The portrait brand image supplied by the founder appears here and in
-          the welcome screen. A simplified bridge symbol is used at small sizes.
+          The original supplied robot video plays in profile imagery throughout the
+          interface. The bridge remains the signature intro and voice visualization.
         </p>
       </section>
       <p className="muted">

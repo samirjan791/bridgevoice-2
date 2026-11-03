@@ -1,0 +1,27 @@
+/* Original source video is cropped by the avatar window only, never retimed. */
+.robot-original-video > video { width:116.3637%; height:142.7273%; max-width:none; left:-8.1818%; top:-3.4091%; object-fit:fill; border-radius:0; }
+@media (max-width:760px) {
+ .chat-app { position:fixed; inset:auto 0 auto; top:var(--chat-viewport-top,0px); height:var(--chat-viewport-height,100dvh); width:100%; overflow:hidden; }
+ .chat-app .chat-main { height:100%; min-height:0; }
+ .chat-app .chat-sidebar { height:var(--chat-viewport-height,100dvh); }
+ .chat-app .chat-topbar { flex-basis:54px; min-height:54px; height:54px; padding:8px 12px; }
+ .chat-app .conversation-scroll { padding:16px; overscroll-behavior-y:contain; }
+ .chat-app .chat-bottom { padding:8px 12px max(10px,env(safe-area-inset-bottom)); flex-shrink:0; max-height:75%; overflow-y:auto; }
+ .chat-app.chat-empty .chat-bottom { flex:1; min-height:0; max-height:none; display:flex; align-items:stretch; padding:8px 12px max(10px,env(safe-area-inset-bottom)); }
+ .chat-app.chat-empty .composer-column { display:flex; flex-direction:column; min-height:0; }
+ .chat-app.chat-empty .plain-greeting { flex:1; min-height:0; display:flex; align-items:center; justify-content:center; margin:0; padding:20px; font-size:25px; line-height:1.4; }
+ .chat-app.chat-empty .suggestion-rows { order:1; flex-shrink:0; margin:8px 0; }
+ .chat-app.chat-empty .composer-wrap { order:2; flex-shrink:0; }
+ .chat-app .chat-composer { min-height:54px; padding:6px 8px; border-radius:30px; }
+ /* Keep a subtle focus boundary; individual controls retain keyboard focus rings. */
+ .chat-app .chat-composer:focus-within { border-color:var(--muted); box-shadow:0 4px 18px #00000008; outline:none; }
+ .chat-app .chat-composer textarea { font-size:16px; min-height:40px; }
+ .chat-app .chat-composer .tool-icon { width:36px; height:36px; min-height:36px; }
+ .chat-app .chat-composer:has(textarea:focus) { flex-wrap:wrap; border-radius:24px; padding:8px 12px; gap:4px; }
+ .chat-app .chat-composer:has(textarea:focus) textarea { order:1; flex:0 0 100%; width:100%; min-height:40px; padding:8px 4px; }
+ .chat-app .chat-composer:has(textarea:focus) .composer-menu-anchor { order:2; margin-inline-end:auto; }
+ .chat-app .chat-composer:has(textarea:focus)>button { order:3; }
+ .chat-app.chat-empty:has(textarea:focus) .suggestion-rows { display:none; }
+ .chat-app.chat-empty:has(textarea:focus) .plain-greeting { visibility:hidden; }
+ .chat-disclaimer { font-size:11px; line-height:1.4; margin:0 0 6px; }
+}

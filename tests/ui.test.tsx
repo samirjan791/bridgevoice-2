@@ -16,7 +16,7 @@ import { MeaningGuardCard } from "@/components/chat/MeaningGuardCard";
 import { ChatMessage } from "@/components/chat/ChatMessage";
 import { Settings } from "@/components/settings";
 import { chatRequestSchema } from "@/lib/chat/schema";
-import { offlineChat } from "@/lib/chat/offline";
+import { apiResult } from "./helpers/api-result";
 import { useConversation } from "@/lib/chat/use-conversation";
 import { readHistory, persistChat, HISTORY_KEY } from "@/lib/chat/history";
 import { readSaved } from "@/lib/storage";
@@ -28,13 +28,15 @@ vi.mock("next/image", () => ({
   ),
 }));
 const result = () =>
-  offlineChat(
+  apiResult(
     chatRequestSchema.parse({
       message: "What does dosage mean?",
       language: "ps",
     }),
   );
 beforeEach(() => {
+ vi.spyOn(HTMLMediaElement.prototype,"pause").mockImplementation(()=>{});
+ vi.spyOn(HTMLMediaElement.prototype,"play").mockResolvedValue();
   localStorage.clear();
   sessionStorage.clear();
   vi.stubGlobal(
@@ -49,7 +51,7 @@ beforeEach(() => {
   );
   vi.stubGlobal(
     "fetch",
-    vi.fn(async () => new Response(JSON.stringify({ configured: false }))),
+    vi.fn(async (url: string) => url === "/api/chat" ? new Response("data: " + JSON.stringify({type:"result",result:result()}) + "\n\n") : new Response(JSON.stringify({ configured: false }))),
   );
 });
 afterEach(() => {
@@ -57,21 +59,19 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 describe("accessible chat components", () => {
-  it("uses the approved logo on the welcome screen and shows offline mode honestly", () => {
+  it("uses the supplied robot on the welcome screen and requires Meta without a fallback mode", () => {
     render(
       <Providers>
         <ChatShell />
       </Providers>,
     );
-    expect(
-      screen
-        .getByRole("img", { name: /two people wearing headsets/ })
-        .getAttribute("src"),
-    ).toBe("/brand/bridgevoice-approved.jpeg");
-    expect(screen.getByText("Local tools · no live AI")).toBeTruthy();
+    expect(screen.getByRole("link",{name:"BridgeVoice home"}).querySelector("img")?.getAttribute("src")).toBe("/brand/robot-poster.png");
+    expect(screen.queryByRole("button",{name:"Skip introduction"})).toBeNull();
+    expect(screen.queryByText(/Connection options|Key configured · verified/)).toBeNull();
+    expect(screen.queryByLabelText(/I have permission to send/)).toBeNull();
     expect(screen.getByRole("textbox", { name: "Message" })).toBeTruthy();
   });
-  it("sends a question, saves terminology, and clears the session", async () => {
+  it("sends directly without connection options or consent, saves terminology, and clears the session", async () => {
     render(
       <Providers>
         <ChatShell />
@@ -94,7 +94,7 @@ describe("accessible chat components", () => {
         <ChatShell />
       </Providers>,
     );
-    fireEvent.change(screen.getByLabelText("Response and interface language"), {
+    fireEvent.change(screen.getByLabelText("Interface language"), {
       target: { value: "fa-AF" },
     });
     expect(document.documentElement.dir).toBe("rtl");
@@ -127,11 +127,7 @@ describe("accessible chat components", () => {
       shiftKey: true,
     });
     expect(send).toHaveBeenCalledTimes(1);
-    expect(
-      screen
-        .getByRole("button", { name: "English voice input" })
-        .hasAttribute("disabled"),
-    ).toBe(true);
+    expect(screen.queryByRole("button",{name:"Dictate"})).toBeNull();
   });
   it("renders RTL translated output and meaningful review controls", () => {
     const r = result();
@@ -153,13 +149,15 @@ describe("accessible chat components", () => {
           onFollow={() => {}}
           onRetry={() => {}}
           onEdit={() => {}}
+          onSaveEdit={() => {}}
+          onDelete={() => {}}
         />
       </Providers>,
     );
-    expect(screen.getByText("د درملو اندازه").getAttribute("dir")).toBe("rtl");
+    expect(screen.getAllByText("د درملو اندازه").find(el => el.closest(".translation-answer"))!.getAttribute("dir")).toBe("rtl");
   });
   it("requires review before resolving a warning", () => {
-    const r = offlineChat(
+    const r = apiResult(
       chatRequestSchema.parse({
         message: "check",
         language: "en",
@@ -182,19 +180,14 @@ describe("accessible chat components", () => {
     fireEvent.change(select, { target: { value: "resolved" } });
     expect(select.value).toBe("resolved");
   });
-  it("advances a fictional offline demo", async () => {
+  it("sends fictional demo input through the API", async () => {
     render(
       <Providers>
         <ChatShell demo />
       </Providers>,
     );
     fireEvent.click(screen.getByRole("button", { name: "Next demo segment" }));
-    await waitFor(() =>
-      expect(
-        screen.getAllByText(/Offline · deterministic glossary and checks/)
-          .length,
-      ).toBeGreaterThan(0),
-    );
+    await screen.findByText("Mocked API answer for automated testing.");
     expect(screen.getByText("1 / 3")).toBeTruthy();
   });
   it("history is explicit and validated", () => {
@@ -214,6 +207,7 @@ describe("accessible chat components", () => {
         <Settings />
       </Providers>,
     );
+    fireEvent.click(screen.getByRole("button",{name:"History & data"}));
     fireEvent.click(
       screen.getByRole("button", {
         name: "Delete all BridgeVoice browser data",
@@ -274,4 +268,45 @@ describe("conversation failure and cancellation", () => {
     expect(r.current.messages).toHaveLength(0);
     expect(r.current.busy).toBe(false);
   });
+});
+
+it("switches true-black and white theme while preserving chat input", () => {
+  render(
+    <Providers>
+      <ChatShell />
+    </Providers>,
+  );
+  const input = screen.getByRole("textbox", { name: "Message" });
+  fireEvent.change(input, { target: { value: "Keep this draft" } });
+  fireEvent.change(screen.getByLabelText("Theme"),{target:{value:"light"}});
+  expect(document.documentElement.dataset.theme).toBe("light");
+  expect((input as HTMLTextAreaElement).value).toBe("Keep this draft");
+  fireEvent.change(screen.getByLabelText("Theme"),{target:{value:"dark"}});
+  expect(document.documentElement.dataset.theme).toBe("dark");
+});
+it("collapses the desktop sidebar and opens the dedicated voice view", () => {
+  const view=render(<Providers><ChatShell /></Providers>);
+  fireEvent.click(screen.getAllByLabelText("Hide sidebar")[0]);
+  expect(view.container.querySelector('.chat-app')?.classList.contains('sidebar-collapsed')).toBe(true);
+  fireEvent.click(screen.getByLabelText("Show sidebar"));
+  expect(view.container.querySelector('.chat-app')?.classList.contains('sidebar-collapsed')).toBe(false);
+  fireEvent.click(screen.getByLabelText("Open voice conversation"));
+  expect(screen.getByRole('dialog').getAttribute('aria-modal')).toBe('true');
+  fireEvent.click(screen.getByLabelText("End voice session"));
+  expect(screen.queryByRole('dialog')).toBeNull();
+});
+it("requires internet and never replaces a failed API request with a sample", async () => {
+  const request=chatRequestSchema.parse({message:"Translate this",language:"en"});
+  vi.stubGlobal("fetch",vi.fn(async()=>{throw new Error("Network unavailable");}));
+  const {result:r}=renderHook(()=>useConversation(()=>{}));
+  await act(async()=>{await r.current.send(request,"meta");});
+  expect(r.current.messages.filter(m=>m.role==='assistant')).toHaveLength(0);
+  expect(r.current.error).toBe("Network unavailable");
+  expect(r.current.messages[0].content).toBe("Translate this");
+});
+it("has no alternate provider selector",()=>{
+  render(<Providers><ChatShell/></Providers>);
+  expect(screen.queryByRole('button',{name:/Guided offline/i})).toBeNull();
+  expect(screen.queryByText(/Connection options|Key configured · verified/)).toBeNull();
+    expect(screen.queryByLabelText(/I have permission to send/)).toBeNull();
 });

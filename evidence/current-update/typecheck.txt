@@ -1,0 +1,3 @@
+Final execution: npm run typecheck
+next typegen && tsc --noEmit
+Types generated successfully. Exit code 0.

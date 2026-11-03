@@ -1,0 +1,44 @@
+{
+  "created": "10/25/2026",
+  "testsPassed": 135,
+  "testFiles": 9,
+  "lint": "passed",
+  "typecheck": "passed",
+  "productionBuild": "passed",
+  "startup": "passed",
+  "configRecoveryFixtureTests": "passed",
+  "brandAssets": [
+    {
+      "file": "public/brand/bridgevoice-app-icon.png",
+      "unchanged": true
+    },
+    {
+      "file": "public/brand/bridgevoice-unified.png",
+      "unchanged": true
+    },
+    {
+      "file": "public/brand/apple-touch-icon.png",
+      "unchanged": true
+    },
+    {
+      "file": "public/brand/favicon.png",
+      "unchanged": true
+    },
+    {
+      "file": "public/brand/bridgevoice-mark.png",
+      "unchanged": true
+    },
+    {
+      "file": "public/brand/bridge-symbol.svg",
+      "unchanged": true
+    },
+    {
+      "file": "public/brand/bridgevoice-approved.jpeg",
+      "unchanged": true
+    }
+  ],
+  "liveMeta": "not tested \u2014 no credentials",
+  "liveSpeech": "not tested on hardware",
+  "browserVisualQA": "not completed",
+  "deployment": "not performed"
+}

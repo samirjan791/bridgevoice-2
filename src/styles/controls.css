@@ -1,0 +1,231 @@
+/* BridgeVoice brand-unification enhancement — additive, no functionality changed */
+.v2-wordmark img {
+  object-fit: contain;
+  background: #fff;
+  border: 1px solid rgba(28, 135, 211, 0.1);
+  box-shadow: 0 2px 10px rgba(17, 86, 155, 0.09);
+}
+.v2-wordmark {
+  letter-spacing: -0.035em;
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .v2-wordmark img {
+    transition:
+      transform 0.22s ease,
+      box-shadow 0.22s ease;
+  }
+  a:hover .v2-wordmark img {
+    transform: translateY(-1px) scale(1.035);
+    box-shadow: 0 5px 16px rgba(17, 86, 155, 0.15);
+  }
+}
+
+/* Website-first mobile and installed-web-app safeguards. */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+body {
+  min-width: 0;
+  overflow-x: clip;
+}
+img,
+video,
+canvas,
+svg {
+  max-width: 100%;
+}
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+@media (max-width: 600px) {
+  input,
+  textarea,
+  select {
+    font-size: max(16px, 1rem);
+  }
+}
+
+/* Minimal conversation composer: advanced actions are available under one + menu. */
+.composer-menu-anchor {
+  position: relative;
+  display: inline-flex;
+}
+.composer-popover {
+  position: absolute;
+  bottom: calc(100% + 12px);
+  inset-inline-start: 0;
+  z-index: 90;
+  width: min(280px, 82vw);
+  padding: 7px;
+  border-radius: 16px;
+  background: var(--surface, #fff);
+  color: var(--text, #172b36);
+  border: 1px solid var(--line, #c9d5d7);
+  box-shadow: 0 12px 38px rgba(0, 0, 0, 0.16);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.composer-popover button {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  text-align: start;
+  width: 100%;
+  padding: 12px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.composer-popover button:hover,
+.composer-popover button:focus-visible {
+  background: rgba(110, 145, 150, 0.13);
+}
+.composer-popover button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+[dir="rtl"] .composer-popover button {
+  text-align: right;
+}
+.chat-topbar {
+  padding-top: max(10px, env(safe-area-inset-top));
+}
+@media (max-width: 760px) {
+  .prompt-cards {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .prompt-cards button {
+    min-width: 0;
+  }
+}
+
+/* BridgeVoice final polish: three evenly spaced actions centered beneath the welcome text. */
+.chat-welcome .prompt-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  width: min(100%, 690px);
+  margin-inline: auto;
+  gap: 12px;
+}
+.chat-welcome .prompt-cards button {
+  min-width: 0;
+}
+@media (max-width: 520px) {
+  .chat-welcome .prompt-cards {
+    gap: 8px;
+  }
+  .chat-welcome .prompt-cards button {
+    padding: 10px;
+    font-size: 0.76rem;
+  }
+}
+
+/* Message actions: non-destructive inline editing and contextual menu. */
+.user-message-menu {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 4px);
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 130px;
+  padding: 6px;
+  background: var(--surface, #fff);
+  color: var(--foreground, #222);
+  border: 1px solid var(--border, #bbb);
+  border-radius: 12px;
+  box-shadow: 0 8px 26px #0002;
+}
+.user-message-menu button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-align: start;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  border-radius: 7px;
+  padding: 9px;
+  cursor: pointer;
+}
+.user-message-menu button:hover {
+  background: #8882;
+}
+.user-message-editor {
+  min-width: min(420px, 72vw);
+}
+.user-message-editor textarea {
+  display: block;
+  width: 100%;
+  min-height: 90px;
+  padding: 10px;
+  border: 1px solid #8887;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+.user-message-editor-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+}
+.user-message-editor-actions button {
+  border: 1px solid #8887;
+  border-radius: 7px;
+  padding: 7px 12px;
+  cursor: pointer;
+}
+[dir="rtl"] .user-message-menu {
+  right: auto;
+  left: 0;
+}
+
+/* BridgeVoice 2026 chat refinements */
+.history-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  margin: 9px 0;
+  border: 1px solid var(--line, #ddd);
+  border-radius: 12px;
+}
+.history-search input {
+  min-width: 0;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  outline: 0;
+  font: inherit;
+  font-size: 13px;
+}
+.photo-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: rgba(70, 140, 200, 0.12);
+  font-size: 13px;
+}
+.photo-chip button {
+  margin-left: auto;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+

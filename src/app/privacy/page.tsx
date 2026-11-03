@@ -4,6 +4,19 @@ export default function Page() {
       <span className="eyebrow">BRIDGEVOICE 2.0</span>
       <h1>Privacy, in plain language.</h1>
       <section>
+        <h2>Optional cloud read-aloud</h2>
+        <p>
+          When no matching installed voice is available and the server has Azure
+          Speech configured, Read aloud asks permission to send the selected
+          answer to Microsoft Azure for audio generation. The application keeps
+          the returned audio in memory for playback and releases it when stopped
+          or closed. No audio is intentionally saved by this application.
+          Microsoft’s processing and retention terms apply. For Dari, the
+          optional Persian (Iran) voice uses different pronunciation and is
+          explicitly labeled before use.
+        </p>
+      </section>
+      <section>
         <h2>What stays on your device</h2>
         <p>
           By default, conversation messages and extracted document text stay in
@@ -17,10 +30,10 @@ export default function Page() {
       <section>
         <h2>When information leaves your device</h2>
         <p>
-          Guided offline chat uses local rules and glossary data. Live Meta mode
+          Every AI conversation uses the Meta API and
           sends your current message, bounded context from this conversation,
           and attached document excerpts to the configured Meta API. You must
-          enable Live Meta and affirm permission. The request sets store:false,
+          affirm permission before sending. The request sets store:false,
           which is not a guarantee about all provider processing or retention;
           Meta’s applicable terms and privacy practices still apply.
         </p>

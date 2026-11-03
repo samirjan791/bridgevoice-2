@@ -1,3 +1,5 @@
+BridgeVoice 3.0 update: consult README.md and docs/v3/IMPLEMENTATION_REPORT.md for current status. Live-service, hardware and telephone acceptance remain unverified. Prior notes below describe the original build, not current readiness.
+
 # Setup and deployment
 
 ## Local development
@@ -20,3 +22,7 @@ No deployment has been performed by this package. Hosting account selection, sec
 ## Speech
 
 Use localhost or HTTPS. English Web Speech support varies by browser/OS. The application detects the API and provides typed fallback. Recognition may rely on an external browser service. Input uses the browser's default microphone; no fake device selector is provided. Read-aloud requires a matching installed voice; Dari requires fa-AF rather than assuming another Persian locale is Dari. Real-device testing remains outstanding.
+
+## Opening animation (2.1.0)
+
+To skip it while developing: Settings → "Opening animation", or clear `sessionStorage` to see it again. Re-generate the wordmark with `python3 scripts/build-wordmark.py <path-to-Inter-SemiBold.otf>`.

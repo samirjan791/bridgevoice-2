@@ -4,7 +4,8 @@ export function GET() {
     {
       configured: !!(process.env.MODEL_API_KEY || process.env.META_API_KEY),
       model: process.env.META_MODEL_ID || "muse-spark-1.3",
-      verified: false,
+      verified: null,
+      verificationNote: "Configuration only. A successful authenticated model request is required to verify the connection.",
       accessProtected: !!process.env.BRIDGEVOICE_ACCESS_TOKEN,
     },
     { headers: { "Cache-Control": "no-store" } },

@@ -29,6 +29,7 @@ export function detectLanguage(text: string): Language | undefined {
     /(?:into|in|speak|answer|continue in)\s+(?:simple\s+)?pashto\b/i.test(text)
   )
     return "ps";
+  if (/(?:into|in|speak|answer|continue in)\s+spanish\b/i.test(text)) return "es-US";
   if (/(?:into|in|speak|answer|continue in)\s+english\b/i.test(text))
     return "en";
 }

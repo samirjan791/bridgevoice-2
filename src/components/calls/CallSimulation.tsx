@@ -1,0 +1,18 @@
+"use client";
+import {useEffect,useState} from 'react';
+import {newSession,callTransition,Participant} from '@/lib/calls/session';
+import {BridgeProof} from '@/components/proof/BridgeProof';
+export function CallSimulation(){
+ const [session,setSession]=useState(newSession),[input,setInput]=useState('Hello. Your fictional appointment is tomorrow at 9 AM.'),[speaker,setSpeaker]=useState<Participant>('A');
+ useEffect(()=>{const timer=setInterval(()=>setSession(s=>callTransition(s,{type:'tick'})),1000);return()=>clearInterval(timer);},[]);
+ return <main id="main" className="call-demo"><h1>BridgeCall lab</h1><p><strong>Local simulation · no phone calls, no live audio, no model translation.</strong> This demonstrates participant isolation and lifecycle controls only. Use fictional text.</p><p role="status">Session: {session.state}</p>
+ {session.state==='idle'&&<button onClick={()=>setSession(s=>callTransition(s,{type:'start'}))}>Start simulated session</button>}
+ {session.state==='consent'&&<><p>Both fictional participants must acknowledge AI interpretation.</p>{(['A','B'] as const).map(p=><label key={p}><input type="checkbox" checked={session.consent[p]} onChange={e=>{if(e.target.checked)setSession(s=>callTransition(s,{type:'consent',participant:p}));else setSession(s=>({...s,consent:{...s.consent,[p]:false}}));}}/>Participant {p} consents in this simulation</label>)}<button disabled={!session.consent.A||!session.consent.B} onClick={()=>setSession(s=>callTransition(s,{type:'connect'}))}>Connect simulated participants</button></>}
+ {session.state==='connected'&&<><label>Source participant<select value={speaker} onChange={e=>setSpeaker(e.target.value as Participant)}><option>A</option><option>B</option></select></label><label>Fictional routing payload (not translated)<textarea value={input} maxLength={12000} onChange={e=>setInput(e.target.value)}/></label><button disabled={!input.trim()} onClick={()=>setSession(s=>callTransition(s,{type:'segment',participant:speaker,origin:'human',id:crypto.randomUUID(),text:input}))}>Route only to the other participant</button><button onClick={()=>setSession(s=>callTransition(s,{type:'segment',participant:speaker,origin:'generated',id:crypto.randomUUID(),text:'Simulated output echo'}))}>Test generated-audio rejection</button><p>Generated output is rejected as fresh input: delivered count stays unchanged.</p><button onClick={()=>setSession(s=>callTransition(s,{type:'handoff'}))}>Pause for human handoff</button><button onClick={()=>setSession(s=>callTransition(s,{type:'failure'}))}>Simulate provider failure</button></>}
+ {session.state==='handoff'&&<p>Interpretation is paused. No human was contacted. Arrange an interpreter through your organization, then begin a new session.</p>}
+ {!['ended','failed','idle'].includes(session.state)&&<button onClick={()=>setSession(s=>callTransition(s,{type:'end'}))}>End simulated session</button>}
+ {['ended','failed'].includes(session.state)&&<button onClick={()=>setSession(newSession())}>Clear and reset simulation</button>}
+ <div className="participant-inboxes">{(['A','B'] as const).map(p=><section key={p}><h2>Participant {p} inbox</h2>{session.delivered.filter(d=>d.to===p).map(d=><p key={d.id} dir="auto">From {d.from}: {d.text}</p>)}</section>)}</div>
+ <details><summary>BridgeProof controlled mismatch demonstration</summary><p>Fictional local test. The altered English rendering below is deliberately wrong, not a Meta output.</p><BridgeProof source="Do not take more than 2 tablets in 24 hours." translation="Take 20 tablets in 24 hours." from="en" to="en"/></details>
+ </main>;
+}

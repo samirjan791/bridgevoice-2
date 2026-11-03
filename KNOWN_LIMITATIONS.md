@@ -1,3 +1,9 @@
+BridgeVoice 3.0 update: consult README.md and docs/v3/IMPLEMENTATION_REPORT.md for current status. Live-service, hardware and telephone acceptance remain unverified. Prior notes below describe the original build, not current readiness.
+
+## Current combined animated release
+
+Live acceptance is not certified: browser click-through, real microphone/echo/interruption behavior, actual Meta answers, and phone/desktop screenshots remain unverified. See README.md for the current voice architecture, requirements and device checklist. Older notes below are retained as history and may describe the replaced manual voice interface.
+
 # Known limitations — release 2.0
 
 ## External verification still required

@@ -31,6 +31,23 @@ it("blocks cross-origin requests", async () =>
       )
     ).status,
   ).toBe(403));
+it("allows localhost browser with loopback server address", async () => {
+  vi.stubEnv("MODEL_API_KEY", "");
+  vi.stubEnv("META_API_KEY", "");
+  const r = await POST(
+    new NextRequest("http://127.0.0.1:3000/api/chat", {
+      method: "POST",
+      headers: { origin: "http://localhost:3000", "content-type": "application/json" },
+      body: JSON.stringify({ message: "hello", language: "en" }),
+    }),
+  );
+  expect(r.status).toBe(503); // Credentials missing, not origin blocked.
+  expect((await r.json()).error).toContain("not configured");
+});
+it("rejects a different local port", async () => {
+  const r = await POST(req({ message: "hello", language: "en" }, { origin: "http://127.0.0.1:3001" }));
+  expect(r.status).toBe(403);
+});
 it("enforces private deployment access token", async () => {
   vi.stubEnv("BRIDGEVOICE_ACCESS_TOKEN", "private-test-code");
   expect((await POST(req({ message: "hello", language: "en" }))).status).toBe(

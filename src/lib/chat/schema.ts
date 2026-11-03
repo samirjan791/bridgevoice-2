@@ -40,11 +40,13 @@ export const chatRequestSchema = z
     messages: z.array(contextMessage).max(12).default([]),
     language: language,
     sourceLanguage: language.default("en"),
+    speaker: z.enum(["Person A","Person B"]).optional(),
     task: taskSchema.default("auto"),
     level: z.enum(["simple", "standard", "detailed"]).default("standard"),
     original: z.string().max(12000).default(""),
     proposed: z.string().max(12000).default(""),
     document: documentSchema.optional(),
+    image: z.object({ name: z.string().max(120), dataUrl: z.string().max(4200000).regex(/^data:image\/(jpeg|png|webp);base64,/)}).optional(),
   })
   .refine(
     (r) => r.messages.reduce((n, m) => n + m.content.length, 0) <= 24000,
@@ -61,6 +63,7 @@ export const chatModelSchema = z.object({
         en: z.string().min(1).max(160),
         ps: z.string().max(300),
         "fa-AF": z.string().max(300),
+        "es-US": z.string().max(300).optional(),
         explanation: z.string().max(1200),
         domain: z.string().max(80),
         example: z.string().max(1200),
@@ -80,11 +83,12 @@ export const chatModelSchema = z.object({
       z.object({ page: z.number().int().min(1), quote: z.string().max(2000) }),
     )
     .max(6),
-  followUps: z.array(z.string().max(250)).max(3),
+  followUps: z.array(z.string().max(250)).max(3).describe("Suggested next messages written from the user perspective, sent verbatim on click. Never assistant questions to the user."),
 });
 export type ChatModel = z.infer<typeof chatModelSchema>;
 export const chatResultSchema = chatModelSchema.extend({
   warnings: z.array(chatModelSchema.shape.warnings.element).max(14),
+  reviewedTranslation: z.string().max(18000).optional(),
   provider: z.string(),
   latencyMs: z.number(),
   task: taskSchema,
@@ -115,8 +119,10 @@ export type ChatMessage = {
   result?: ChatResult;
   feedback?: "helpful" | "needs-review";
   created: number;
+  speaker?: "Person A" | "Person B";
 };
 export const storedChatSchema = z.object({
+  pinned: z.boolean().optional(),
   id: z.string().max(100),
   title: z.string().max(100),
   updated: z.number(),
@@ -127,6 +133,7 @@ export const storedChatSchema = z.object({
         role: z.enum(["user", "assistant"]),
         content: z.string().max(18000),
         created: z.number(),
+        speaker: z.enum(["Person A","Person B"]).optional(),
         result: chatResultSchema.optional(),
         feedback: z.enum(["helpful", "needs-review"]).optional(),
       }),

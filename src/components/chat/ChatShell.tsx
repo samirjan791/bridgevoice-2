@@ -1,32 +1,35 @@
 "use client";
+import { useChatViewport } from "@/lib/use-chat-viewport";
+import { ChatOptions } from "./ChatOptions";
+import { MeaningMirror } from "./MeaningMirror";
+import { APP_NAME } from "@/lib/brand";
+import { ChatTopbar } from "./ChatTopbar";
+import { motionTiming, motionEase } from "@/lib/motion";
+import ReactMarkdown from "react-markdown";
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import {
-  Menu,
-  ChevronDown,
   ArrowDown,
-  Languages,
-  Lightbulb,
-  FileText,
-  AudioLines,
   ShieldCheck,
+  Languages,
+  SlidersHorizontal,
   X,
-  Download,
-  Trash2,
   Pause,
   Square,
   Play,
 } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import { usePreferences } from "../providers";
-import { Brand, LivingBridge } from "../brand/Brand";
 import { ChatSidebar } from "./ChatSidebar";
+import { RotatingWelcome } from "./RotatingWelcome";
 import { ChatComposer } from "./ChatComposer";
+import { MeaningReview } from "./MeaningCheck";
+import { VoiceConversation } from "./VoiceConversation";
 import { ChatMessage } from "./ChatMessage";
 import { BridgeMode } from "./BridgeMode";
 import { DemoPanel } from "./DemoPanel";
 import { useConversation } from "@/lib/chat/use-conversation";
 import { useSpeech } from "@/lib/use-speech";
+import { speechLocale } from "@/lib/speech-capabilities";
 import { useVoiceOutput } from "@/lib/use-voice-output";
 import { Language, packs } from "@/lib/languages";
 import { ui } from "@/lib/ui-text";
@@ -41,19 +44,25 @@ import {
   detectLanguage,
   detectLocalAction,
 } from "@/lib/chat/router";
-import { readHistory, persistChat, removeChat } from "@/lib/chat/history";
+import { readHistory, persistChat, removeChat, toggleChatPin } from "@/lib/chat/history";
 import { readSaved, saveEntry, download } from "@/lib/storage";
 import { demos } from "@/data/demos";
 export function ChatShell({ demo = false }: { demo?: boolean }) {
+  useChatViewport();
   const { settings, update, notify } = usePreferences(),
     t = ui[settings.uiLanguage],
     reduced = useReducedMotion();
+  const documentInput=useRef<HTMLInputElement>(null);
+  const [dismissedSuggestions,setDismissedSuggestions]=useState<string[]>([]);
   const chat = useConversation(notify);
+  const provider = "meta" as const;
+  const [speaker,setSpeaker]=useState<"Person A"|"Person B">("Person A");
+  const [speakInterpretation,setSpeakInterpretation]=useState(false);
+  const interpreted=useRef<string|undefined>(undefined);
+  const [voiceOpen,setVoiceOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [text, setText] = useState(""),
     [sidebar, setSidebar] = useState(false),
-    [provider, setProvider] = useState<"offline" | "meta">("offline"),
-    [configured, setConfigured] = useState(false),
-    [consent, setConsent] = useState(false),
     [options, setOptions] = useState(false),
     [task, setTask] = useState<Task>("auto"),
     [level, setLevel] = useState<"simple" | "standard" | "detailed">(
@@ -67,6 +76,10 @@ export function ChatShell({ demo = false }: { demo?: boolean }) {
     [source, setSource] = useState<Language>("en"),
     [document, setDocument] = useState<DocumentText | undefined>(),
     [uploading, setUploading] = useState(false),
+    [uploadingName,setUploadingName] = useState(""),
+    [photo, setPhoto] = useState<
+      { name: string; dataUrl: string } | undefined
+    >(),
     [history, setHistory] = useState<StoredChat[]>([]),
     [id, setId] = useState(""),
     [scenario, setScenario] = useState(0),
@@ -80,6 +93,13 @@ export function ChatShell({ demo = false }: { demo?: boolean }) {
     uploadAbort = useRef<AbortController | null>(null),
     uploadGeneration = useRef(0);
   const voice = useVoiceOutput(voiceLanguage, settings.volume);
+  useEffect(()=>{
+    const last=chat.messages.at(-1);
+    if(!bridge||paused||!speakInterpretation||chat.busy||last?.role!=="assistant"||!last.result?.translation||interpreted.current===last.id)return;
+    interpreted.current=last.id;
+    if(voice.canSpeakLanguage(last.result.targetLanguage))void voice.speak(last.result.translation,last.result.targetLanguage);
+    else notify("No matching output voice. Read the displayed translation instead.");
+  },[chat.messages,chat.busy,bridge,paused,speakInterpretation,voice,notify]);
   const sendRef = useRef<(s?: string) => Promise<boolean>>(async () => false);
   const speech = useSpeech((value) => {
     if (bridge && settings.automatic && !paused && !chat.busy)
@@ -92,10 +112,6 @@ export function ChatShell({ demo = false }: { demo?: boolean }) {
   });
   useEffect(() => {
     setId(crypto.randomUUID());
-    fetch("/api/status")
-      .then((r) => r.json())
-      .then((s) => setConfigured(!!s.configured))
-      .catch(() => setConfigured(false));
     return () => uploadAbort.current?.abort();
   }, []);
   useEffect(() => {
@@ -155,12 +171,14 @@ export function ChatShell({ demo = false }: { demo?: boolean }) {
     setUploading(false);
   }
   function newChat() {
+    setVoiceOpen(false);
     chat.reset();
     speech.stop();
     voice.stop();
     cancelUpload();
     setText("");
     setDocument(undefined);
+    setPhoto(undefined);
     setOriginal("");
     setProposed("");
     setBridge(false);
@@ -178,15 +196,16 @@ export function ChatShell({ demo = false }: { demo?: boolean }) {
     setTask("bridge");
     if (settings.target === "en") update({ target: "ps" });
   }
-  async function send(value = text) {
-    const message = value.trim();
+  async function send(value = text, inputSource: Language = source) {
+    const message =
+      value.trim() || (photo ? "Please describe and analyze this photo." : document ? "Please summarize this document." : "");
     if (!message || chat.busy || uploading) return false;
     if (bridge && paused) {
       notify("Resume Bridge Mode before sending a segment.");
       return false;
     }
-    const selectedLanguage = detectLanguage(message) || settings.target;
-    if (detectLanguage(message)) update({ target: selectedLanguage });
+    const selectedLanguage = bridge?settings.target:(detectLanguage(message) || settings.target);
+    if (!bridge && detectLanguage(message)) update({ target: selectedLanguage });
     if (/make it simpler|make it shorter/i.test(message)) setLevel("simple");
     if (/explain more|more detail/i.test(message)) setLevel("detailed");
     const local = detectLocalAction(message);
@@ -263,17 +282,12 @@ export function ChatShell({ demo = false }: { demo?: boolean }) {
       setText("");
       return true;
     }
-    if (provider === "meta" && !consent) {
-      chat.setError(
-        "Confirm that you have permission to send this conversation and any attached text to Meta.",
-      );
-      return false;
-    }
     const ok = await chat.send(
       {
         message,
+        speaker: bridge?speaker:undefined,
         language: selectedLanguage,
-        sourceLanguage: source,
+        sourceLanguage: inputSource,
         task: bridge ? "bridge" : mirror ? "compare" : task,
         level: /simpler|shorter/i.test(message)
           ? "simple"
@@ -283,27 +297,57 @@ export function ChatShell({ demo = false }: { demo?: boolean }) {
         original: mirror ? original : bridge ? message : "",
         proposed: mirror ? proposed : "",
         document,
+        image: photo,
       },
       provider,
     );
-    if (ok) setText((current) => (current === value ? "" : current));
+    if (ok) {
+      setText((current) => (current === value ? "" : current));
+      setPhoto(undefined);
+    }
     return ok;
   }
+  const reviewMeaning: MeaningReview = (passage, answer, from, to) => {
+    if (chat.busy) return;
+    void chat.send({ message: "Review my explanation against the original. Identify possible changes in meaning, omissions, conditions and uncertainty. Do not give medical or legal advice. Suggest questions for the original speaker. Do not claim that a matching explanation is safe or certified.", original: passage, proposed: answer, sourceLanguage: from, language: to, task: "compare", level: "standard" }, "meta");
+  };
   sendRef.current = send;
   async function attach(file: File) {
+    if (/^image\/(jpeg|png|webp)$/.test(file.type)) {
+      if (file.size > 2.5 * 1024 * 1024) {
+        notify("Choose a JPG, PNG, or WebP photo under 2.5 MB.");
+        return;
+      }
+      try {
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result));
+          reader.onerror = () => reject(new Error("Could not read photo"));
+          reader.readAsDataURL(file);
+        });
+        setPhoto({ name: file.name.slice(0, 120), dataUrl });
+        notify(
+          "Photo attached. Send a question. Image analysis requires model vision support.",
+        );
+      } catch {
+        notify("Could not attach this photo.");
+      }
+      return;
+    }
     if (file.size > 4 * 1024 * 1024 || !/[.](pdf|docx|txt)$/i.test(file.name)) {
       notify("Choose a PDF, DOCX or TXT file under 4 MB.");
       return;
     }
     if (
       !window.confirm(
-        "Extract this document on the BridgeVoice server? It is not saved. Sending its extracted text to Meta requires Live Meta mode and your consent.",
+        "Extract this document on the " + APP_NAME + " server? It is not saved. When you send a message, its attached text is sent to Meta.",
       )
     )
       return;
     cancelUpload();
     const run = uploadGeneration.current;
     uploadAbort.current = new AbortController();
+    setUploadingName(file.name);
     setUploading(true);
     try {
       const form = new FormData();
@@ -331,17 +375,13 @@ export function ChatShell({ demo = false }: { demo?: boolean }) {
     }
   }
   function microphone() {
-    if (speech.listening) speech.stop();
-    else if (source !== "en")
-      notify(
-        "Only English speech input is enabled. Type Pashto or Dari instead.",
-      );
+    if (speech.listening) speech.finish();
     else if (
       window.confirm(
-        "Start English microphone input? Browser speech services may process audio externally. Obtain permission from everyone involved.",
+        "Start microphone input? Language recognition depends on your device and browser. Browser speech services may process audio externally. Obtain permission from everyone involved.",
       )
     )
-      speech.start();
+      speech.start(speechLocale[source]);
   }
   const current = demos[scenario];
   useEffect(() => {
@@ -370,30 +410,25 @@ export function ChatShell({ demo = false }: { demo?: boolean }) {
       void send(current.segments[next]);
     }
   }
-  const prompts = [
-    {
-      icon: Languages,
-      title: t.translate,
-      text: "Translate this into Pashto: ",
-    },
-    { icon: Lightbulb, title: t.understand, text: "What does dosage mean?" },
-    {
-      icon: AudioLines,
-      title: t.practice,
-      text: "Help me interpret a doctor’s conversation.",
-    },
-    {
-      icon: FileText,
-      title: t.document,
-      text: "Help me understand a document.",
-    },
-  ];
   return (
-    <div className="chat-app" dir={packs[settings.uiLanguage].dir}>
+    <>
+    <div
+      className={
+        "chat-app" + (sidebarCollapsed ? " sidebar-collapsed" : "") +
+        (!chat.messages.length && !bridge && !mirror && !demo
+          ? " chat-empty"
+          : "")
+      }
+      dir={packs[settings.uiLanguage].dir}
+    >
+      {voiceOpen && <VoiceConversation onTarget={l=>update({target:l})} onClose={() => {setVoiceOpen(false);chat.stop();}} onSend={send} onStop={chat.stop} busy={chat.busy} language={settings.target} volume={settings.volume} error={chat.error} live={provider === "meta"} canConverse={true} answer={(() => {const m=chat.messages.findLast(m=>m.role === "assistant");return m ? {id:m.id,text:m.result?.translation || m.content,language:m.result?.targetLanguage || settings.target} : undefined;})()} />}
       <ChatSidebar
+        tools={<><button onClick={()=>{setMirror(!mirror);setBridge(false);setTask(mirror?"auto":"compare");setSidebar(false);}}><ShieldCheck size={18}/><span>Meaning Mirror</span></button><button onClick={()=>{startBridge();setSidebar(false);}}><Languages size={18}/><span>Interpret a conversation</span></button><button onClick={()=>{setOptions(!options);setSidebar(false);}}><SlidersHorizontal size={18}/><span>Response options</span></button></>}
         open={sidebar}
         onClose={() => setSidebar(false)}
         onNew={newChat}
+        onCollapse={()=>setSidebarCollapsed(true)}
+        onPin={chatId=>{try{toggleChatPin(chatId);setHistory(readHistory());}catch{notify("Could not save pin.");}}}
         history={history}
         historyEnabled={settings.history}
         language={settings.uiLanguage}
@@ -401,6 +436,7 @@ export function ChatShell({ demo = false }: { demo?: boolean }) {
           chat.reset(c.messages);
           cancelUpload();
           setDocument(undefined);
+          setPhoto(undefined);
           speech.stop();
           voice.stop();
           setId(c.id);
@@ -423,52 +459,8 @@ export function ChatShell({ demo = false }: { demo?: boolean }) {
           }
         }}
       />
-      <main className="chat-main" id="main">
-        <header className="chat-topbar">
-          <div>
-            <button
-              className="mobile-only tool-icon"
-              aria-label="Open navigation"
-              onClick={() => setSidebar(true)}
-            >
-              <Menu size={20} />
-            </button>
-            <span className="desktop-only topbar-label">
-              Your space for understanding <ChevronDown size={13} />
-            </span>
-            <span className="mobile-only">
-              <Brand />
-            </span>
-          </div>
-          <div className="topbar-right">
-            <span
-              className={
-                "connection " +
-                (provider === "meta" && chat.connection === "Connected"
-                  ? "connected"
-                  : "")
-              }
-            >
-              <i />
-              {provider === "offline" ? "Demo mode" : chat.connection}
-            </span>
-            <label className="sr-only" htmlFor="language-select">
-              Response and interface language
-            </label>
-            <select
-              id="language-select"
-              value={settings.target}
-              onChange={(e) => {
-                const language = e.target.value as Language;
-                update({ target: language, uiLanguage: language });
-              }}
-            >
-              <option value="en">English</option>
-              <option value="ps">پښتو</option>
-              <option value="fa-AF">دری</option>
-            </select>
-          </div>
-        </header>
+      <main className="chat-main" id="main" inert={sidebar}>
+        <ChatTopbar {...{setSidebar,sidebarCollapsed,setSidebarCollapsed,settings,update}} connection={chat.connection} />
         <div
           className="conversation-scroll"
           ref={scroll}
@@ -505,81 +497,28 @@ export function ChatShell({ demo = false }: { demo?: boolean }) {
                 }}
                 onNext={demoNext}
                 index={index}
-                disabled={chat.busy || (provider === "meta" && !consent)}
+                disabled={chat.busy}
               />
-            )}
-            {!chat.messages.length && !bridge && (
-              <section className="chat-welcome">
-                <motion.div
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{
-                    duration: reduced || !settings.motion ? 0 : 0.35,
-                  }}
-                >
-                  <Brand full />
-                  <span className="welcome-eyebrow">
-                    THE HUMAN CONNECTION ENGINE
-                  </span>
-                  <h1>{t.welcome}</h1>
-                  <p>{t.subtitle}</p>
-                </motion.div>
-                <div className="prompt-cards">
-                  {prompts.map(({ icon: Icon, title, text: prompt }) => (
-                    <button
-                      key={title}
-                      onClick={() => {
-                        if (title === t.document) {
-                          setOptions(true);
-                          notify(
-                            "Use the paperclip to attach a PDF, DOCX or TXT.",
-                          );
-                        }
-                        setText(prompt);
-                      }}
-                    >
-                      <Icon size={21} />
-                      <span>{title}</span>
-                      <span className="card-arrow">↗</span>
-                    </button>
-                  ))}
-                </div>
-                <div className="welcome-trust">
-                  <ShieldCheck size={14} />
-                  <span>
-                    {settings.history
-                      ? "Chat history is saved on this device"
-                      : t.private}
-                  </span>
-                </div>
-              </section>
             )}
             {chat.messages.map((message, i) => (
               <motion.div
                 key={message.id}
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: reduced || !settings.motion ? 0 : 0.2 }}
+                transition={{ duration: reduced || !settings.motion ? 0 : motionTiming.fast, ease: motionEase }}
               >
                 <ChatMessage
                   message={message}
+                  onMeaningReview={reviewMeaning}
                   busy={chat.busy}
-                  canSpeak={
-                    voice.supported &&
-                    (!message.result ||
-                      message.result.targetLanguage === voiceLanguage)
-                  }
+                  canSpeak={voice.canSpeakLanguage(message.result?.targetLanguage || "en")}
                   onSpeak={(s, l) => {
                     setVoiceLanguage(l);
-                    voice.speak(s);
+                    voice.speak(s, l);
                   }}
                   onFeedback={(v) => chat.feedback(message.id, v)}
                   onFollow={(s) => void send(s)}
                   onRetry={() => {
-                    if (provider === "meta" && !consent) {
-                      notify("Confirm permission before sending to Meta.");
-                      return;
-                    }
                     const user = chat.messages
                       .slice(0, i)
                       .findLast((m) => m.role === "user");
@@ -605,23 +544,33 @@ export function ChatShell({ demo = false }: { demo?: boolean }) {
                     }
                   }}
                   onEdit={() => {
-                    speech.stop();
-                    chat.reset(chat.messages.slice(0, i));
-                    setText(message.content);
+                    /* Edit is handled inline by ChatMessage. */
                   }}
+                  onSaveEdit={(content) =>
+                    chat.updateMessage(message.id, content)
+                  }
+                  onDelete={() => chat.deleteMessage(message.id)}
                 />
               </motion.div>
             ))}
             {chat.busy && (
-              <section className="streaming-message" aria-live="polite">
-                <LivingBridge busy />
+              <section className="streaming-message" aria-busy="true">
+                <span className="sr-only" role="status">
+                  {chat.draft ? "Writing response" : "Waiting for response"}
+                </span>
                 {chat.draft ? (
                   <>
-                    <small>Streaming draft · awaiting validation</small>
-                    <p dir="auto">{chat.draft}</p>
+                    <div className="markdown streaming-text" dir="auto">
+                      <ReactMarkdown components={{ img: () => null }}>
+                        {chat.draft}
+                      </ReactMarkdown>
+                    </div>
+                    <small className="draft-note">
+                      Draft · still generating
+                    </small>
                   </>
                 ) : (
-                  <p>Connecting words with meaning…</p>
+                  <span className="thinking-dot" aria-hidden="true" />
                 )}
               </section>
             )}
@@ -631,10 +580,6 @@ export function ChatShell({ demo = false }: { demo?: boolean }) {
                 <button
                   disabled={chat.busy}
                   onClick={() => {
-                    if (provider === "meta" && !consent) {
-                      notify("Confirm permission first.");
-                      return;
-                    }
                     void chat.retry();
                   }}
                 >
@@ -652,12 +597,15 @@ export function ChatShell({ demo = false }: { demo?: boolean }) {
         </div>
         <div className="chat-bottom">
           <div className="composer-column">
+            {!chat.messages.length && !bridge && !mirror && <div className="plain-greeting"><RotatingWelcome language={settings.uiLanguage} animate={settings.motion && !reduced} paused={!!text}/></div>}
+            {chat.messages.length>0&&<p className="chat-disclaimer">BridgeVoice can make mistakes. Check important meaning.</p>}
+
             {showJump && (
               <button
                 className="jump-latest"
                 onClick={() => {
                   stick.current = true;
-                  bottom.current?.scrollIntoView?.({ behavior: "smooth" });
+                  bottom.current?.scrollIntoView?.({ behavior: reduced || !settings.motion ? "instant" : "smooth" });
                 }}
               >
                 <ArrowDown size={15} />
@@ -665,7 +613,9 @@ export function ChatShell({ demo = false }: { demo?: boolean }) {
               </button>
             )}
             {bridge && (
-              <BridgeMode
+              <><BridgeMode
+                speaker={speaker}
+                onSpeaker={p=>{if(p===speaker)return;speech.stop();voice.stop();chat.stop();setText("");setPaused(false);setSpeaker(p);const previous=source;setSource(settings.target);update({target:previous});}}
                 source={source}
                 target={settings.target}
                 onSource={setSource}
@@ -673,235 +623,37 @@ export function ChatShell({ demo = false }: { demo?: boolean }) {
                 listening={speech.listening}
                 paused={paused}
                 onPause={() => {
+                  voice.stop();
                   setPaused(!paused);
                   speech.stop();
                   setPlaying(false);
                   chat.stop();
                 }}
                 onStop={() => {
+                  voice.stop();
                   setPaused(true);
                   speech.stop();
                   chat.stop();
                   setPlaying(false);
                 }}
                 onReturn={() => {
+                  voice.stop();
+                  chat.stop();
                   setBridge(false);
                   setTask("auto");
                   setPaused(false);
                   speech.stop();
                 }}
                 onMic={microphone}
-                micSupported={speech.supported}
-              />
+                micSupported={settings.dictation && speech.supported}
+              /><label className="interpret-output"><input type="checkbox" checked={speakInterpretation} onChange={e=>{interpreted.current=chat.messages.at(-1)?.id;setSpeakInterpretation(e.target.checked);if(!e.target.checked)voice.stop();}}/>Speak new translations when a matching voice is available</label></>
             )}
-            {mirror && (
-              <section className="mirror-panel">
-                <div>
-                  <b>
-                    <ShieldCheck size={17} /> Meaning Mirror
-                  </b>
-                  <button
-                    className="tool-icon"
-                    aria-label="Close Meaning Mirror"
-                    onClick={() => {
-                      setMirror(false);
-                      setTask("auto");
-                    }}
-                  >
-                    <X size={16} />
-                  </button>
-                </div>
-                <div className="mirror-fields">
-                  <label>
-                    Original text
-                    <textarea
-                      aria-label="Original text"
-                      value={original}
-                      dir="auto"
-                      maxLength={12000}
-                      onChange={(e) => setOriginal(e.target.value)}
-                    />
-                  </label>
-                  <label>
-                    Your translation
-                    <textarea
-                      aria-label="Proposed translation"
-                      value={proposed}
-                      dir="auto"
-                      maxLength={12000}
-                      onChange={(e) => setProposed(e.target.value)}
-                    />
-                  </label>
-                </div>
-                <div className="mirror-controls">
-                  <label>
-                    Source language
-                    <select
-                      value={source}
-                      onChange={(e) => setSource(e.target.value as Language)}
-                    >
-                      {Object.values(packs).map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <button
-                    className="primary"
-                    disabled={!original.trim() || !proposed.trim() || chat.busy}
-                    onClick={() =>
-                      void send(
-                        "Check whether this translation changes the original meaning.",
-                      )
-                    }
-                  >
-                    Compare meaning
-                  </button>
-                </div>
-              </section>
-            )}
-            {document && (
-              <details className="document-chip">
-                <summary>
-                  <FileText size={16} />
-                  {document.name}
-                  <span>{document.pages.length} extracted sections</span>
-                  <button
-                    className="tool-icon"
-                    aria-label="Remove document"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setDocument(undefined);
-                      if (task === "document") setTask("auto");
-                    }}
-                  >
-                    <X size={15} />
-                  </button>
-                </summary>
-                <small>
-                  {document.truncated
-                    ? "Partial extraction: first 30 pages / 24,000 characters. Answers may omit later content."
-                    : "The extracted text is kept only in this conversation session."}{" "}
-                  DOCX/TXT use section 1, not original page numbering.
-                </small>
-                <pre dir="auto">{document.pages[0]?.text.slice(0, 2000)}</pre>
-              </details>
-            )}
-            {uploading && (
-              <div className="document-chip" role="status">
-                Extracting document text…
-                <button onClick={cancelUpload}>Cancel</button>
-              </div>
-            )}
-            {options && (
-              <section className="chat-options">
-                <div>
-                  <label>
-                    Task
-                    <select
-                      value={task}
-                      onChange={(e) => {
-                        setTask(e.target.value as Task);
-                        if (e.target.value === "compare") setMirror(true);
-                        if (e.target.value === "bridge") startBridge();
-                      }}
-                    >
-                      {[
-                        ["auto", "Automatic"],
-                        ["chat", "Conversation"],
-                        ["translate", "Translation"],
-                        ["explain", "Explanation"],
-                        ["simplify", "Simplify"],
-                        ["compare", "Compare translations"],
-                        ["terms", "Terminology"],
-                        ["document", "Document"],
-                        ["bridge", "Interpretation"],
-                      ].map(([value, label]) => (
-                        <option key={value} value={value}>
-                          {label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    Explanation
-                    <select
-                      value={level}
-                      onChange={(e) => setLevel(e.target.value as typeof level)}
-                    >
-                      <option value="simple">Simple</option>
-                      <option value="standard">Standard</option>
-                      <option value="detailed">Detailed</option>
-                    </select>
-                  </label>
-                  <label>
-                    Read-aloud language
-                    <select
-                      value={voiceLanguage}
-                      onChange={(e) => {
-                        voice.stop();
-                        setVoiceLanguage(e.target.value as Language);
-                      }}
-                    >
-                      {Object.values(packs).map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    Volume
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.1"
-                      value={settings.volume}
-                      onChange={(e) =>
-                        update({ volume: Number(e.target.value) })
-                      }
-                    />
-                  </label>
-                </div>
-                <div className="option-actions">
-                  <button
-                    disabled={!chat.messages.length}
-                    onClick={() =>
-                      download(
-                        "bridgevoice-chat.json",
-                        JSON.stringify(
-                          {
-                            exportedAt: new Date().toISOString(),
-                            messages: chat.messages,
-                          },
-                          null,
-                          2,
-                        ),
-                        "application/json",
-                      )
-                    }
-                  >
-                    <Download size={14} />
-                    Export chat
-                  </button>
-                  <button onClick={newChat}>
-                    <Trash2 size={14} />
-                    Clear session
-                  </button>
-                  <small>
-                    {voice.supported
-                      ? "A matching read-aloud voice is available."
-                      : "No matching read-aloud voice installed for this selection."}
-                  </small>
-                </div>
-              </section>
-            )}
-            {voice.speaking && (
+            {mirror && <MeaningMirror {...{setMirror,setTask,original,setOriginal,proposed,setProposed,source,setSource,chat,send}} />}
+            {options && <ChatOptions {...{task,setTask,setMirror,startBridge,level,setLevel,voiceLanguage,setVoiceLanguage,voice,settings,update,chat,newChat}} />}
+            {(voice.speaking || voice.loading) && (
               <div className="speech-playback">
-                <span>Reading aloud · browser voice</span>
-                <button onClick={voice.togglePause}>
+                <span>{voice.loading ? "Preparing audio…" : voice.label}</span>
+                <button onClick={voice.togglePause} disabled={voice.loading}>
                   {voice.paused ? <Play size={14} /> : <Pause size={14} />}
                   {voice.paused ? "Resume" : "Pause"}
                 </button>
@@ -912,58 +664,9 @@ export function ChatShell({ demo = false }: { demo?: boolean }) {
               </div>
             )}
             {voice.error && <small role="alert">{voice.error}</small>}
-            <div className="provider-row">
-              <div className="provider-switch">
-                <button
-                  aria-pressed={provider === "offline"}
-                  onClick={() => {
-                    chat.stop();
-                    chat.setError("");
-                    setProvider("offline");
-                    setPlaying(false);
-                  }}
-                >
-                  {t.offline}
-                </button>
-                <button
-                  aria-pressed={provider === "meta"}
-                  onClick={() => {
-                    chat.stop();
-                    chat.setError("");
-                    setProvider("meta");
-                    setPlaying(false);
-                  }}
-                >
-                  {t.live}
-                </button>
-              </div>
-              <small>
-                {provider === "offline"
-                  ? "Local tools · no live AI"
-                  : configured
-                    ? "Key configured · connection verified only after a successful request"
-                    : "Meta key needed · see Settings"}
-              </small>
-            </div>
-            {provider === "meta" && (
-              <label className="chat-consent">
-                <input
-                  type="checkbox"
-                  checked={consent}
-                  onChange={(e) => {
-                    setConsent(e.target.checked);
-                    if (!e.target.checked) {
-                      chat.stop();
-                      setPlaying(false);
-                    }
-                  }}
-                />
-                I have permission to send this conversation and attached text to
-                Meta. Provider terms apply.
-              </label>
-            )}
             <ChatComposer
               text={text}
+              onVoice={() => {speech.stop();voice.stop();setPlaying(false);setVoiceOpen(true);}}
               setText={setText}
               onSend={() => void send()}
               busy={chat.busy || uploading}
@@ -973,9 +676,16 @@ export function ChatShell({ demo = false }: { demo?: boolean }) {
                 setPlaying(false);
               }}
               onAttach={attach}
+              photoName={photo?.name}
+              photoUrl={photo?.dataUrl}
+              documentAttachment={document}
+              onClearDocument={()=>{setDocument(undefined);if(task==="document")setTask("auto");}}
+              uploadingName={uploading?uploadingName:undefined}
+              onCancelUpload={cancelUpload}
+              onClearPhoto={() => setPhoto(undefined)}
               listening={speech.listening}
               onMic={microphone}
-              micSupported={speech.supported && source === "en"}
+              micSupported={settings.dictation && speech.supported}
               uiLanguage={settings.uiLanguage}
               onBridge={() =>
                 bridge
@@ -991,16 +701,17 @@ export function ChatShell({ demo = false }: { demo?: boolean }) {
               onOptions={() => setOptions(!options)}
               interim={speech.interim}
             />
+            {!chat.messages.length && !bridge && !mirror && <div className="suggestion-rows">{[
+              {id:"translate",label:t.translate,action:()=>void send("Translate into Pashto: Please bring your passport to your appointment tomorrow at 9 AM. Keep the time and document name accurate.", "en")},
+              {id:"explain",label:t.understand,action:()=>void send("Explain the term deductible in health insurance using simple English and one concrete example with a $500 deductible. Explain how it differs from a copay.", "en")},
+              {id:"document",label:"Upload a document",action:()=>documentInput.current?.click()},
+            ].filter(s=>!dismissedSuggestions.includes(s.id)).map(s=><div key={s.id}><button onClick={s.action}>{s.label}</button><button aria-label={"Dismiss "+s.label} onClick={()=>setDismissedSuggestions([...dismissedSuggestions,s.id])}><X size={15}/></button></div>)}</div>}
+            <input ref={documentInput} type="file" hidden accept=".pdf,.docx,.txt" aria-label="Suggestion document upload" onChange={e=>{const file=e.target.files?.[0];if(file)void attach(file);e.target.value="";}}/>
+
           </div>
-        </div>
-        <div className="chat-legal">
-          <Link href="/privacy">Privacy</Link>
-          <span>·</span>
-          <Link href="/terms">Terms</Link>
-          <span>·</span>
-          <span>Every voice deserves to be understood.</span>
         </div>
       </main>
     </div>
+    </>
   );
 }

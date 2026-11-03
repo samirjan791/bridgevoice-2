@@ -1,0 +1,15 @@
+import {it,expect} from 'vitest';
+import {bridgeProof} from '@/lib/proof/check';
+const issues=(a:string,b:string)=>bridgeProof(a,b,'en','en').issues.map(i=>i.id);
+it('detects changed negation and numbers',()=>{expect(issues('Do not bring 2 bags.','Bring 20 bags.')).toEqual(expect.arrayContaining(['negation-mismatch','number-mismatch']));});
+it('detects swapped dates and AM/PM even when number sets match',()=>{expect(issues('Come 05/06/2027 at 9 AM.','Come 06/05/2027 at 9 PM.')).toContain('date-time');});
+it('detects currency change with identical amount',()=>{expect(issues('Pay $50.','Pay €50.')).toContain('currency');});
+it('does not flag equivalent currency position',()=>{expect(issues('Pay $50','Pay 50 dollars')).not.toContain('currency');});
+it('checks missing instructions and reversed temporal direction',()=>{expect(issues('Bring your passport. Contact the office.','Bring your passport.').some(x=>x.startsWith('instruction-'))).toBe(true);expect(issues('Pay before arrival.','Pay after arrival.')).toContain('reversal-before');});
+it('checks identifiers and user protected names without inventing identity',()=>{expect(issues('Reference: ABC-123','Reference: ABC-124').some(x=>x.startsWith('identifier-'))).toBe(true);expect(bridgeProof('Meet Samir','Meet Sami','en','en',['Samir']).issues.some(i=>i.category==='name')).toBe(true);});
+it('retains exact supporting source text and never overwrites original',()=>{const a='Take 5 mg.';const r=bridgeProof(a,'Take 50 mg.','en','en');expect(r.issues[0].sourceText).toBe(a);expect(r.status).toBe('Human review required');});
+it('normalizes Persian digits without claiming multilingual semantics',()=>{expect(bridgeProof('Bring 2 bags','Bring ۲ bags','en','en').issues).toHaveLength(0);expect(bridgeProof('Hello','سلام','en','ps').limits).toContain('Cross-language');});
+it('does not certify high-risk matching text',()=>{expect(bridgeProof('Take 2 tablets.','Take 2 tablets.','en','en').status).toBe('Human review required');});
+it('does not flag unchanged ordinary instructions or decimal amounts',()=>{expect(issues('Bring 2 bags.','Bring 2 bags.')).toEqual([]);expect(issues('Pay $1.50','Pay $1.50')).toEqual([]);});
+it('distinguishes missing unit and swapped bindings',()=>{expect(issues('Take 5 mg in 2 hours.','Take 2 mg in 5 hours.')).toContain('binding');expect(issues('Use 5 mg.','Use 5 mcg.')).toContain('unit-check');});
+it('requires both passages and asks clarification for ambiguous timing',()=>{expect(bridgeProof('Tomorrow','', 'en','en').status).toBe('Review recommended');expect(bridgeProof('Come tomorrow','Come tomorrow','en','en').questions.length).toBeGreaterThan(0);});

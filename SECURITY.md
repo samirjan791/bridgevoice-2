@@ -1,3 +1,5 @@
+BridgeVoice 3.0 update: consult README.md and docs/v3/IMPLEMENTATION_REPORT.md for current status. Live-service, hardware and telephone acceptance remain unverified. Prior notes below describe the original build, not current readiness.
+
 # Security and privacy notes
 
 Keep MODEL_API_KEY/META_API_KEY in private server environment variables. The client never receives them. .gitignore excludes local environment files. No application code logs conversations, documents or credentials.

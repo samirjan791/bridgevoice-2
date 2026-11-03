@@ -1,10 +1,11 @@
 import { z } from "zod";
-export const language = z.enum(["en", "ps", "fa-AF"]);
+export const language = z.enum(["en", "ps", "fa-AF", "es-US"]);
 export const entrySchema = z.object({
   id: z.string().min(1).max(100),
   en: z.string().min(1).max(160),
   ps: z.string().max(300),
   "fa-AF": z.string().max(300),
+  "es-US": z.string().max(300).optional(),
   explanation: z.string().max(1200),
   domain: z.string().max(80),
   example: z.string().max(1200),

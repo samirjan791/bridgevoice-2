@@ -1,0 +1,8 @@
+1. Extract the ZIP into Downloads.
+2. Stop the previous BridgeVoice server with Control+C.
+3. Paste into Terminal:
+
+cd "$HOME/Downloads/bridgevoice-live-animated" && bash START_WITH_EXISTING_KEY.command
+
+4. Open http://127.0.0.1:3000 once Terminal reports Ready.
+Keep Terminal open. Read README.md for voice requirements and unverified live acceptance checks.

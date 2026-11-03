@@ -1,6 +1,17 @@
 import { test, expect } from "@playwright/test";
+import { apiResult } from "../helpers/api-result";
+import { chatRequestSchema } from "../../src/lib/chat/schema";
+// Browser suite uses mocked API transport; never serves sample answers in the application.
+test.beforeEach(async ({page}) => {
+  await page.route("**/api/chat", async route => {
+    const input=chatRequestSchema.parse(route.request().postDataJSON());
+    await route.fulfill({status:200,contentType:"text/event-stream",body:"data: "+JSON.stringify({type:"result",result:apiResult(input)})+"\n\n"});
+  });
+});
 test("chat, glossary persistence and export", async ({ page }) => {
   await page.goto("/");
+  await page.keyboard.press("Escape");
+  await page.locator(".intro").waitFor({state:"detached"});
   await page
     .getByRole("textbox", { name: "Message", exact: true })
     .fill("What does dosage mean?");
@@ -24,8 +35,11 @@ test("chat, glossary persistence and export", async ({ page }) => {
 });
 test("Meaning Mirror detects changed number and negation", async ({ page }) => {
   await page.goto("/");
+  await page.keyboard.press("Escape");
+  await page.locator(".intro").waitFor({state:"detached"});
+  await page.getByText("Conversation tools",{exact:true}).click();
   await page
-    .getByRole("button", { name: "Meaning Mirror", exact: true })
+    .getByRole("button", { name: "Meaning Mirror", exact: true }).last()
     .click();
   await page
     .getByLabel("Original text", { exact: true })
@@ -49,7 +63,7 @@ test("fictional demo, RTL and mobile width", async ({ page }) => {
   await page.getByRole("button", { name: "Next demo segment" }).click();
   await expect(page.getByText("1 / 3")).toBeVisible();
   await page
-    .getByLabel("Response and interface language")
+    .getByLabel("Interface language")
     .selectOption("fa-AF");
   await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
   expect(
@@ -60,13 +74,17 @@ test("fictional demo, RTL and mobile width", async ({ page }) => {
 });
 test("settings and document extraction", async ({ page }) => {
   await page.goto("/settings");
+  await page.getByRole("button",{name:"Appearance",exact:true}).click();
   await page.getByLabel("Reading size").selectOption("large");
   await page.reload();
+  await page.getByRole("button",{name:"Appearance",exact:true}).click();
   await expect(page.getByLabel("Reading size")).toHaveValue("large");
   await page.goto("/");
+  await page.keyboard.press("Escape");
+  await page.locator(".intro").waitFor({state:"detached"});
   page.on("dialog", (dialog) => dialog.accept());
   await page
-    .getByLabel("Choose a document")
+    .getByLabel("Choose a document or photo")
     .setInputFiles("public/examples/school-letter.pdf");
   await expect(page.getByText("school-letter.pdf")).toBeVisible();
 });
