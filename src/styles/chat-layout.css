@@ -151,3 +151,11 @@ input[type="checkbox"] {accent-color:var(--voice);}
 .chat-app .chat-message.user .user-actions{display:none}.chat-app .chat-message.user:hover .user-actions,.chat-app .chat-message.user:focus-within .user-actions{display:flex}
 
 .chat-app .chat-message.user > div[dir="auto"]{background:transparent;max-width:none;padding:0;border-radius:0}
+
+.chat-app .chat-composer{min-height:56px;padding:8px 12px;border-radius:28px;box-shadow:none}
+.chat-app .chat-composer textarea{font-size:17px}
+.chat-app .send-button{background:var(--voice);color:#fff}
+.chat-app .stop-button{display:flex;align-items:center;justify-content:center;flex:0 0 38px;width:38px;height:38px;min-height:38px;border-radius:50%;border:0;padding:8px;background:var(--text);color:var(--bg)}
+[data-theme="dark"] .chat-app .chat-composer{background:#2f2f2f;border-color:transparent}
+.chat-app .chat-composer{align-items:flex-end;padding:12px 14px}
+.chat-app .chat-composer textarea{line-height:24px}

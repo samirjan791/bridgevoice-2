@@ -25,3 +25,7 @@
  .chat-app.chat-empty:has(textarea:focus) .plain-greeting { visibility:hidden; }
  .chat-disclaimer { font-size:11px; line-height:1.4; margin:0 0 6px; }
 }
+
+@media (max-width:760px){.chat-app .chat-composer{min-height:56px;padding:8px 12px;border-radius:28px}}
+
+@media (max-width:760px){.chat-app .chat-composer{padding:12px 14px}.chat-app .chat-composer:has(textarea:focus){padding:12px 14px;border-radius:28px}}
