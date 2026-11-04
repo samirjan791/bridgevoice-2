@@ -42,11 +42,10 @@ release, together with a private access gate (see below).
 
 ## Access gate — note for judges
 
-The live deployment at bridgevoice.us is access-gated: chat without the
-private code returns 401, so strangers cannot burn model calls. **The gate
-comes off before judging** so judges can use the app without a code, and it
-goes back on after judging. The gate is a deployment control, not a product
-feature.
+The live deployment at bridgevoice.us is currently OPEN: no access code
+is needed to chat, so judges can use the app directly. The gate was removed
+Nov 3 at the owner's decision and goes back on after judging. The gate is
+a deployment control, not a product feature.
 
 ## How it works
 
