@@ -46,6 +46,10 @@ export const chatRequestSchema = z
     original: z.string().max(12000).default(""),
     proposed: z.string().max(12000).default(""),
     document: documentSchema.optional(),
+    // The visitor's device local clock + IANA timezone. The server clock
+    // (UTC) must never be presented as the user's time; when this is
+    // absent, no time context is sent at all.
+    clientTime: z.object({ epochMs: z.number().int(), timeZone: z.string().max(100) }).optional(),
     image: z.object({ name: z.string().max(120), dataUrl: z.string().max(4200000).regex(/^data:image\/(jpeg|png|webp);base64,/)}).optional(),
   })
   .refine(

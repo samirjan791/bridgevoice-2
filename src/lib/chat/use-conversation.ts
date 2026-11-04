@@ -7,6 +7,7 @@ import {
   chatResultSchema,
 } from "./schema";
 import { boundedContext } from "./router";
+import { captureClientTime } from "./time";
 import { sseData } from "./sse";
 export function useConversation(notify: (s: string) => void) {
   const [messages, setMessages] = useState<ChatMessage[]>([]),
@@ -58,7 +59,7 @@ export function useConversation(notify: (s: string) => void) {
       );
       return false;
     }
-    const request = { ...input, messages: boundedContext(base) };
+    const request = { ...input, messages: boundedContext(base), clientTime: captureClientTime() };
     last.current = { request, base, provider };
     const user: ChatMessage = {
       id: crypto.randomUUID(),

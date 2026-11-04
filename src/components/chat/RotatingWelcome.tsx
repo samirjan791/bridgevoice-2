@@ -7,16 +7,20 @@ const ORDER: Language[] = ["en", "ps", "fa-AF", "es-US"];
 const RTL: Language[] = ["ps", "fa-AF"];
 const ROTATE_MS = 6000;
 const FADE_MS = 240;
-const TYPE_STEP_MS = 24;
-const WORD_STEP_MS = 110;
+const WORD_STEP_MS = 150;
 
 /**
- * The welcome question, typed in on first appearance and on every rotation
- * through English, Pashto, Dari and Spanish. Latin text types letter by
- * letter; Arabic-script text types word by word, appending whole words, so
- * letter joining never breaks. Lang and text are always set together (never
- * one inside the other's updater), so the phrase is never rendered under the
- * wrong language's font and direction.
+ * The welcome question, typed in word by word on first appearance and on
+ * every rotation through English, Pashto, Dari and Spanish. Every phrase
+ * appends one whole word per step (~150ms), so all four languages reveal at
+ * the same slow, deliberate pace, and Arabic-script letter joining never
+ * breaks (words are never split). Lang and text are always set together
+ * (never one inside the other's updater), so the phrase is never rendered
+ * under the wrong language's font and direction. The rotation clock
+ * restarts from zero every time a phrase finishes typing, so no rotation
+ * can ever fire mid-typing: the first sentence always types to its full
+ * final word and stays before any rotation happens, on any connection or
+ * device speed.
  * Pauses rotation while the user is typing; does nothing when `animate` is
  * false.
  */
@@ -35,6 +39,8 @@ export function RotatingWelcome({
   const pausedRef = useRef(paused);
   const langRef = useRef<Language>(language);
   const typerRef = useRef(0);
+  const rotationRef = useRef(0);
+  const swapRef = useRef(0);
   useEffect(() => {
     pausedRef.current = paused;
   }, [paused]);
@@ -51,28 +57,60 @@ export function RotatingWelcome({
     typerRef.current = 0;
   };
 
-  // Reveal a phrase from empty: Latin letter by letter, Arabic-script word
-  // by word (whole words only, so joining stays intact).
-  const typePhrase = (full: string, rtl: boolean) => {
+  const stopRotation = () => {
+    window.clearInterval(rotationRef.current);
+    rotationRef.current = 0;
+    window.clearTimeout(swapRef.current);
+    swapRef.current = 0;
+  };
+
+  // Restart the rotation clock from zero. Called every time a phrase
+  // finishes typing, so a rotation tick can only ever fire a full ROTATE_MS
+  // after a completed phrase — never while a phrase is still typing, on
+  // any timing. Typing takes at most ~1.4s, far inside the 6s window.
+  const restartRotation = () => {
+    stopRotation();
+    rotationRef.current = window.setInterval(() => {
+      if (pausedRef.current || document.hidden) return;
+      setFading(true);
+      swapRef.current = window.setTimeout(() => {
+        const next = ORDER[(ORDER.indexOf(langRef.current) + 1) % ORDER.length];
+        applyLang(next);
+        setFading(false);
+        typePhrase(ui[next].welcome);
+      }, FADE_MS);
+    }, ROTATE_MS);
+  };
+
+  // Reveal a phrase from empty, one whole word per step, in every language.
+  // Words are never split, so Arabic-script joining stays intact, and every
+  // phrase takes roughly a second — a slow, readable pace, never a blur.
+  // On completion the rotation clock restarts, guaranteeing the full phrase
+  // stays on screen before any rotation.
+  const typePhrase = (full: string) => {
     stopTyping();
     setShown("");
-    if (rtl) {
-      const words = full.split(" ");
-      let j = 0;
-      typerRef.current = window.setInterval(() => {
-        j += 1;
-        setShown(words.slice(0, j).join(" "));
-        if (j >= words.length) stopTyping();
-      }, WORD_STEP_MS);
-    } else {
-      let i = 0;
-      typerRef.current = window.setInterval(() => {
-        i += 1;
-        setShown(full.slice(0, i));
-        if (i >= full.length) stopTyping();
-      }, TYPE_STEP_MS);
-    }
+    const words = full.split(" ");
+    let j = 0;
+    typerRef.current = window.setInterval(() => {
+      j += 1;
+      setShown(words.slice(0, j).join(" "));
+      if (j >= words.length) {
+        stopTyping();
+        restartRotation();
+      }
+    }, WORD_STEP_MS);
   };
+
+  // Clear all timers on unmount.
+  useEffect(
+    () => () => {
+      stopTyping();
+      stopRotation();
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
 
   // Follow the interface language whenever the user changes it.
   useEffect(() => {
@@ -82,17 +120,18 @@ export function RotatingWelcome({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [language]);
 
-  // Type the first line in, once. If the opening sequence is still playing,
-  // wait until it has finished or been skipped.
+  // Type the first line in, once, word by word. If the opening sequence is
+  // still playing, wait until it has finished or been skipped. The rotation
+  // clock restarts when this phrase finishes typing, so the full sentence
+  // always appears before any rotation.
   useEffect(() => {
     if (!animate) return;
     const full = ui[language].welcome;
-    const rtl = RTL.includes(language);
     const root = document.documentElement;
     let start = 0;
     let observer: MutationObserver | undefined;
     const begin = () => {
-      start = window.setTimeout(() => typePhrase(full, rtl), 150);
+      start = window.setTimeout(() => typePhrase(full), 150);
     };
     setShown("");
     if (root.dataset.intro === "play") {
@@ -110,33 +149,10 @@ export function RotatingWelcome({
       observer?.disconnect();
       window.clearTimeout(start);
       stopTyping();
+      stopRotation();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [animate, language]);
-
-  // Rotate through the four languages, typing each new phrase in. The next
-  // language comes from the ref, and lang + text are set as two separate
-  // calls, so a rotated phrase can never render under the old language.
-  useEffect(() => {
-    if (!animate) return;
-    let swap = 0;
-    const id = window.setInterval(() => {
-      if (pausedRef.current || document.hidden) return;
-      setFading(true);
-      swap = window.setTimeout(() => {
-        const next = ORDER[(ORDER.indexOf(langRef.current) + 1) % ORDER.length];
-        applyLang(next);
-        setFading(false);
-        typePhrase(ui[next].welcome, RTL.includes(next));
-      }, FADE_MS);
-    }, ROTATE_MS);
-    return () => {
-      window.clearInterval(id);
-      window.clearTimeout(swap);
-      stopTyping();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [animate]);
 
   return (
     <h1
