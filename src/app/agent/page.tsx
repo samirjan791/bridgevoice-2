@@ -27,17 +27,44 @@ const SUGGESTIONS = [
   { label: "Create a project", message: "Help me create a project plan" },
   { label: "Analyze data", message: "Help me analyze some data" },
 ] as const;
+const USERNAME_KEY = "bridgevoice.userName.v1", NAME_ASKED_KEY = "bridgevoice.nameAsked.v1";
+const NAME_VERB_START = new Set(["help", "plan", "analyze", "create", "make", "translate", "explain", "what", "how", "why", "when", "where", "write", "show", "tell", "give", "do", "can", "please", "hi", "hello", "hey"]);
+const parseName = (raw: string): string | null => {
+  let text = raw.trim().toLowerCase();
+  for (const prefix of ["call me", "my name is", "i\'m", "i am", "just"]) {
+    if (text.startsWith(prefix + " ")) text = text.slice(prefix.length).trim();
+  }
+  if (!text || text.length > 40) return null;
+  const words = text.split(/\s+/);
+  if (words.length < 1 || words.length > 3) return null;
+  if (!/^[a-z\u0600-\u06FF\' \-]+$/.test(text)) return null;
+  if (NAME_VERB_START.has(words[0])) return null;
+  return words.map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+};
 
 export default function AgentPage() {
   const { settings, update } = usePreferences();
   const [active, setActive] = useState(false), [listening, setListening] = useState(false), [busy, setBusy] = useState(false), [speaking, setSpeaking] = useState(false), [muted, setMuted] = useState(false);
-  const [language, setLanguage] = useState<(typeof choices)[number]["id"]>("en"), [name, setName] = useState("Boss"), [showPrefs, setShowPrefs] = useState(false), [input, setInput] = useState(""), [lines, setLines] = useState<Line[]>([]), [interim, setInterim] = useState(""), [error, setError] = useState("");
+  const [language, setLanguage] = useState<(typeof choices)[number]["id"]>("en"), [name, setName] = useState("Boss"), [userName, setUserName] = useState<string | null>(null), [input, setInput] = useState(""), [lines, setLines] = useState<Line[]>([]), [interim, setInterim] = useState(""), [error, setError] = useState("");
   const recognition = useRef<Recognition | null>(null), controller = useRef<AbortController | null>(null);
+  const awaitingNameRef = useRef(false);
   const activeRef = useRef(false), busyRef = useRef(false), mutedRef = useRef(false), speakingRef = useRef(false), langRef = useRef(language);
   const history = useRef<Line[]>([]), voiceEpoch = useRef(0), sendRef = useRef<(text: string) => void>(() => {});
   const speechQueue = useRef<string[]>([]), currentChunk = useRef("");
 
   useEffect(() => { setName(settings.agentTitle); const l = settings.agentLanguage || settings.target; setLanguage(l); langRef.current = l; }, [settings.agentTitle, settings.agentLanguage, settings.target]);
+  useEffect(() => { try { const saved = localStorage.getItem(USERNAME_KEY); if (saved) setUserName(saved.slice(0, 40)); } catch { /* private mode */ } }, []);
+  const displayName = (() => { const t = name.trim(); return t && t !== "Boss" ? t : (userName || "Boss"); })();
+  const maybeAsk = (mode: "voice" | "text"): boolean => {
+    if (userName) return false;
+    if (name.trim() !== "" && name.trim() !== "Boss") return false;
+    try { if (localStorage.getItem(NAME_ASKED_KEY)) return false; } catch { /* private mode */ }
+    try { localStorage.setItem(NAME_ASKED_KEY, "1"); } catch { /* private mode */ }
+    awaitingNameRef.current = true;
+    if (mode === "voice") speak("What do you want me to call you?");
+    else { history.current = [...history.current, { role: "agent", text: "What do you want me to call you?" }]; setLines([...history.current]); }
+    return true;
+  };
   const stopSpeech = useCallback(() => {
     speechQueue.current = []; currentChunk.current = ""; speakingRef.current = false; setSpeaking(false);
     try { window.speechSynthesis?.cancel(); } catch { /* no synthesis */ }
@@ -121,7 +148,7 @@ export default function AgentPage() {
     try { r.start(); setListening(true); setError(""); } catch { recognition.current = null; setError("Unable to start the microphone. Check browser permissions."); }
   }, []);
   const stop = useCallback(() => {
-    activeRef.current = false; setActive(false);
+    activeRef.current = false; setActive(false); awaitingNameRef.current = false;
     stopRecognition(); controller.current?.abort(); controller.current = null;
     busyRef.current = false; setBusy(false); stopSpeech(); setInterim("");
   }, [stopRecognition, stopSpeech]);
@@ -133,6 +160,21 @@ export default function AgentPage() {
   const send = useCallback(async (text: string) => {
     const message = text.trim();
     if (!message || !activeRef.current) return;
+    let askedThisSend = false;
+    if (awaitingNameRef.current) {
+      awaitingNameRef.current = false;
+      const parsed = parseName(message);
+      if (parsed) {
+        try { localStorage.setItem(USERNAME_KEY, parsed); localStorage.setItem(NAME_ASKED_KEY, "1"); } catch { /* private mode */ }
+        setUserName(parsed);
+        const confirm = `Nice to meet you, ${parsed}.`;
+        history.current = [...history.current, { role: "user", text: message }, { role: "agent", text: confirm }]; setLines([...history.current]);
+        setInput(""); stopSpeech(); speak(confirm);
+        return;
+      }
+    } else if (history.current.length === 0) {
+      askedThisSend = maybeAsk("text");
+    }
     controller.current?.abort(); stopSpeech();
     const abort = new AbortController(); controller.current = abort;
     busyRef.current = true; setBusy(true); setError(""); setInput("");
@@ -155,7 +197,7 @@ export default function AgentPage() {
       return;
     }
     try {
-      const identity = `You are BridgeAgent Live, the helpful AI assistant inside BridgeVoice. The person speaking is the owner of this workspace and prefers to be addressed as ${name.trim().slice(0, 60) || "Boss"}. Treat this as a conversational preference, not authentication or authorization. Keep spoken replies short and natural, like a live voice conversation. Never claim to have used tools or performed actions you did not actually perform. You can explain and plan tasks, and when the user asks for a website, build it: write one short spoken sentence, then the complete single-file HTML document in one fenced html code block. That block is how this interface delivers websites — the page shows a live preview with download — never describe the site instead of building it. Keep the file compact and self-contained, with inline CSS and scripts and no external files. This voice interface has no other code execution or external action tools. Answer the user's next request.`;
+      const identity = `You are BridgeAgent Live, the helpful AI assistant inside BridgeVoice. The person speaking is the owner of this workspace and prefers to be addressed as ${displayName.slice(0, 60)}. Treat this as a conversational preference, not authentication or authorization. Keep spoken replies short and natural, like a live voice conversation. Never claim to have used tools or performed actions you did not actually perform. You can explain and plan tasks, and when the user asks for a website, build it: write one short spoken sentence, then the complete single-file HTML document in one fenced html code block. That block is how this interface delivers websites — the page shows a live preview with download — never describe the site instead of building it. Keep the file compact and self-contained, with inline CSS and scripts and no external files. This voice interface has no other code execution or external action tools. Answer the user's next request.`;
       const glossaryMatches = matchGlossary(message, langRef.current as Language);
       const glossaryNote = glossaryMatches.length ? `\n\nRelevant glossary terms (unreviewed drafts \u2014 verify before relying on them): ${glossaryMatches.slice(0, 6).map((e) => { const t = (e as unknown as Record<string, string | undefined>)[langRef.current]; return t && t !== e.en ? `${e.en} (${t})` : e.en; }).join("; ")}` : "";
       let access = "";
@@ -183,13 +225,13 @@ export default function AgentPage() {
       if (!answer) throw new Error("No completed response received");
       if (abort.signal.aborted) return;
       history.current = [...history.current, { role: "agent", text: answer }]; setLines([...history.current]);
-      speak(answer);
+      speak(askedThisSend ? `What do you want me to call you? ${answer}` : answer);
     } catch (e) {
       if (!abort.signal.aborted) setError(e instanceof Error ? e.message : "Unable to respond");
     } finally {
       if (controller.current === abort) { busyRef.current = false; setBusy(false); controller.current = null; }
     }
-  }, [name, speak, stopSpeech]);
+  }, [name, userName, speak, stopSpeech]);
   sendRef.current = send;
 
   const beginTyped = () => {
@@ -199,7 +241,8 @@ export default function AgentPage() {
   const begin = () => {
     activeRef.current = true; setActive(true); setError(""); setInterim("");
     listen();
-    speak(`Hello ${name.trim() || "Boss"}. I'm listening. Just speak, and I'll answer right away.`);
+    if (maybeAsk("voice")) return;
+    speak(`Hello ${displayName}. I'm listening. Just speak, and I'll answer right away.`);
   };
   const toggleMute = () => {
     mutedRef.current = !mutedRef.current; setMuted(mutedRef.current);
@@ -218,9 +261,9 @@ export default function AgentPage() {
     <main className={`agent-page agent-chatbox${active ? " voice-mode" : ""}`}>
       <div className="agent-top"><Link className="agent-brand" href="/app">⌁ <strong>Bridge<span>Voice</span></strong></Link><div className="agent-toplinks"><Link href="/app">Chat</Link><Link href="/settings#live">Settings</Link></div></div>
       <div className="agent-main agent-chat-column">
-        {!active && (<><header className="agent-heading"><h2 className="agent-eyebrow" aria-label="BridgeAgent Live">✦ BRIDGEAGENT LIVE</h2><h1>Good to see you, {name.trim() || "Boss"}.</h1><p>Your AI agent — talk naturally, get answers.</p></header>
-        <div className="agent-prefs-toggle"><button type="button" onClick={()=>setShowPrefs(v=>!v)} aria-expanded={showPrefs}>{name.trim() || "Boss"} · {choices.find(c=>c.id===language)?.label || "English"} {showPrefs ? "▴" : "▾"}</button></div>
-        {showPrefs && (<section className="agent-preferences"><label>How should I address you?<input aria-label="Preferred title" maxLength={60} value={name} onChange={e=>{setName(e.target.value);update({agentTitle:e.target.value});}} disabled={active}/></label><label>Conversation language<select value={language} onChange={e=>changeLanguage(e.target.value as typeof language)}>{choices.map(c=><option key={c.id} value={c.id}>{c.label}</option>)}</select></label></section>)}</>)}
+        {!active && (<><header className="agent-heading"><h2 className="agent-eyebrow" aria-label="BridgeAgent Live">✦ BRIDGEAGENT LIVE</h2><h1>Good to see you, {displayName}.</h1><p>Your AI agent — talk naturally, get answers.</p></header>
+        
+        </>)}
         <section className={`agent-voicebar ${active ? "is-active" : "is-idle"}`}><div aria-label="Agent status" className={`agent-orb ${settings.orbAnimation && active ? "agent-orb-active" : ""} ${status}`}><Mic size={24}/></div><div className="agent-voicebar-text"><h2 className="agent-state">{statusText}</h2><p className="agent-hint">{active ? "I'm listening. You can speak over me to interrupt." : "Tap Start listening to begin. No wake word or background listening."}</p>{interim && settings.showTranscript && <p role="status" className="agent-interim">Hearing: {interim}</p>}</div>
           <div className="agent-actions">{!active ? <button className="agent-start" onClick={begin}><Mic size={19}/> Start listening</button> : <><button className="agent-circle agent-end" onClick={stop} aria-label="End session"><PhoneOff/></button><button className="agent-circle" onClick={toggleMute} aria-label={muted?"Unmute speaker":"Mute speaker"}>{muted?<VolumeX/>:<Volume2/>}</button><button className="agent-circle" onClick={()=>{stopRecognition();window.setTimeout(()=>{if(activeRef.current)listen();},150);}} aria-label={listening?"Restart listening":"Start listening"}>{listening?<Mic/>:<MicOff/>}</button></>}</div>
         </section>

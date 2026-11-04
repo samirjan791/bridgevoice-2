@@ -30,17 +30,17 @@ html[data-theme="dark"] .agent-page{--agent-text:#eaf0ff;--agent-muted:#a9b9d4;-
 /* ChatGPT-style voice screen: minimal dark view while talking. Transcript
    stays hidden during voice; ending the session returns to the chat view
    where the full transcript (including voice results) is shown. */
-.agent-page.agent-chatbox.voice-mode{background:#0a0a12;color:#eef1f6;min-height:100dvh}
-.agent-page.agent-chatbox.voice-mode .agent-top a{color:#eef1f6}
+.agent-page.agent-chatbox.voice-mode{min-height:100dvh}
+
 .agent-page.agent-chatbox.voice-mode .agent-voicebar{flex:1;flex-direction:column;justify-content:center;text-align:center;padding:40px 0}
 .agent-page.agent-chatbox.voice-mode .agent-voicebar .agent-orb{width:200px;height:200px;border-width:8px}
 .agent-page.agent-chatbox.voice-mode .agent-voicebar-text{flex:none}
-.agent-page.agent-chatbox.voice-mode .agent-state{color:#fff}
-.agent-page.agent-chatbox.voice-mode .agent-hint{color:#c6cbd8}
+
+
 .agent-page.agent-chatbox.voice-mode .agent-transcript{display:none}
 .agent-page.agent-chatbox.voice-mode .agent-compose{margin-top:auto}
 .agent-page.agent-chatbox.voice-mode .agent-actions{justify-content:center;margin:12px 0 0}
-.agent-page.agent-chatbox.voice-mode .agent-disclaimer{color:#9aa1b0}
+
 
 /* Suggestion chips on the idle agent screen: tapping one starts a typed
    session and sends a complete starter message the agent can act on. */
