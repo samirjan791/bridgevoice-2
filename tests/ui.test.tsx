@@ -59,13 +59,13 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 describe("accessible chat components", () => {
-  it("uses the supplied robot on the welcome screen and requires Meta without a fallback mode", () => {
+  it("uses the supplied logo on the welcome screen and requires Meta without a fallback mode", () => {
     render(
       <Providers>
         <ChatShell />
       </Providers>,
     );
-    expect(screen.getByRole("link",{name:"BridgeVoice home"}).querySelector("img")?.getAttribute("src")).toBe("/brand/robot-poster.png");
+    expect(screen.getByRole("link",{name:"BridgeVoice home"}).querySelector("img")?.getAttribute("src")).toBe("/brand/bridgevoice-icon.png");
     expect(screen.queryByRole("button",{name:"Skip introduction"})).toBeNull();
     expect(screen.queryByText(/Connection options|Key configured · verified/)).toBeNull();
     expect(screen.queryByLabelText(/I have permission to send/)).toBeNull();

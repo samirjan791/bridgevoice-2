@@ -8,7 +8,18 @@ import {
 } from "react";
 import { motionTiming } from "@/lib/motion";
 import { z } from "zod";
+export const SETTINGS_KEY = "bridgevoice.settings.v3";
 const schema = z.object({
+  agentTitle: z.string().max(60).default("Boss"),
+  agentLanguage: z.enum(["ps", "fa-AF", "en", "es-US"]).nullable().default(null),
+  showTranscript: z.boolean().default(true),
+  transcriptLarge: z.boolean().default(false),
+  orbAnimation: z.boolean().default(true),
+  speechRate: z.number().min(0.5).max(2).default(1),
+  microphoneId: z.string().max(300).default(""),
+  allowPersian: z.boolean().default(false),
+  preferredVoices: z.record(z.string(), z.string()).default({}),
+  rememberAccess: z.boolean().default(false),
   target: z.enum(["ps", "fa-AF", "en", "es-US"]),
   uiLanguage: z.enum(["en", "ps", "fa-AF", "es-US"]).default("en"),
   autoLanguage: z.boolean().default(false),
@@ -27,7 +38,8 @@ const schema = z.object({
   sensitivity: z.enum(["all", "critical"]),
 });
 type Settings = z.infer<typeof schema>;
-const defaults: Settings = {
+export const defaults: Settings = {
+  agentTitle: "Boss", agentLanguage: null, showTranscript: true, transcriptLarge: false, orbAnimation: true, speechRate: 1, microphoneId: "", allowPersian: false, preferredVoices: {}, rememberAccess: false,
   target: "en",
   uiLanguage: "en",
   autoLanguage: false,
@@ -56,8 +68,8 @@ export function Providers({ children }: { children: ReactNode }) {
     [notice, notify] = useState("");
   useEffect(() => {
     try {
-      const v = localStorage.getItem("bridgevoice.settings.v2");
-      if (v) set(schema.parse(JSON.parse(v)));
+      const v = localStorage.getItem(SETTINGS_KEY) || localStorage.getItem("bridgevoice.settings.v2");
+      if (v) { const loaded=schema.parse({ ...defaults, ...JSON.parse(v) }); set(loaded); if(loaded.rememberAccess){const code=localStorage.getItem("bridgevoice.access.remembered");if(code)sessionStorage.setItem("bridgevoice.access",code);} }
     } catch {
       notify("Preferences could not be restored. Defaults are active.");
     }
@@ -86,7 +98,7 @@ export function Providers({ children }: { children: ReactNode }) {
     applyTheme();
     media.addEventListener("change", applyTheme);
     document.documentElement.dataset.font = settings.font;
-    document.documentElement.dataset.motion = String(settings.motion);
+    document.documentElement.dataset.motion = String(settings.motion && !window.matchMedia("(prefers-reduced-motion: reduce)").matches);
     document.documentElement.dataset.contrast = String(settings.contrast);
     return () => media.removeEventListener("change", applyTheme);
   }, [settings]);
@@ -100,7 +112,7 @@ export function Providers({ children }: { children: ReactNode }) {
     const next = { ...settings, ...s };
     set(next);
     try {
-      localStorage.setItem("bridgevoice.settings.v2", JSON.stringify(next));
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(next));
     } catch {
       notify("Storage unavailable. Preferences apply only until reload.");
     }

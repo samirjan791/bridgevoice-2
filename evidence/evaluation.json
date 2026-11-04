@@ -30,6 +30,6 @@
   "total": 4,
   "demoSegmentsWithGlossaryMatches": 14,
   "demoSegments": 18,
-  "measuredRuleBatchMs": 12.775602999999933,
+  "measuredRuleBatchMs": 12.861532000000011,
   "liveModelEvaluated": false
 }

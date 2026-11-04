@@ -1,7 +1,7 @@
 "use client";
 import {useRef,useState} from "react";
 import {Volume2,VolumeX,X,Keyboard,RotateCcw,SlidersHorizontal,ArrowLeft} from "lucide-react";
-import {RobotAvatar} from "../brand/RobotAvatar";
+import {BrandMark} from "../brand/BrandMark";
 import {VoiceBridge} from "./VoiceBridge";
 
 import {useLiveConversation,VoiceProps} from "@/lib/use-live-conversation";
@@ -16,7 +16,7 @@ export function VoiceConversation(props:VoiceProps){
  const status=configured===null?"Connecting…":!configured?"Meta connection required":!speech.supported?"Speech input unavailable":muted?"Replies muted":state;
  const hideOptions=()=>{setOptions(false);optionsButton.current?.focus();};
  return <div className="voice-overlay live-voice voice-focus" role="dialog" aria-modal="true" aria-labelledby="voice-title" ref={panel} onKeyDown={e=>{if(e.key==='Escape'&&options){e.stopPropagation();hideOptions();}}}>
-   <header><button aria-label="Return to chat" onClick={close}><ArrowLeft/></button><span id="voice-title" className="voice-brand-identity"><RobotAvatar size={36}/><span>{APP_NAME}<small className="robot-meta-label">Powered by Meta</small></span></span><button ref={optionsButton} aria-label="Voice settings" aria-expanded={options} aria-controls="voice-settings" onClick={()=>setOptions(!options)}><SlidersHorizontal/></button></header>
+   <header><button aria-label="Return to chat" onClick={close}><ArrowLeft/></button><span id="voice-title" className="voice-brand-identity"><BrandMark size={36} /><span>{APP_NAME}<small className="robot-meta-label">Powered by Meta</small></span></span><button ref={optionsButton} aria-label="Voice settings" aria-expanded={options} aria-controls="voice-settings" onClick={()=>setOptions(!options)}><SlidersHorizontal/></button></header>
    <div className="voice-stage">
     <VoiceBridge meter={false} state={muted?"muted":state==="Error"?"error":voice.speaking?"speaking":voice.loading?"processing":state==="Translating"?"translating":state==="Processing"?"processing":speech.listening?"listening":"ready"}/>
     <h2 aria-live="polite">{status}</h2>

@@ -1,15 +1,16 @@
-import { RobotAvatar } from "./RobotAvatar";
+import Image from "next/image";
+import { BrandMark } from "./BrandMark";
 export function Brand({ full = false }: { full?: boolean }) {
   if (full)
     return (
       <div className="full-brand">
-        <RobotAvatar size={240} />
+        <Image src="/brand/bridgevoice-logo.jpg" alt="BridgeVoice logo" width={480} height={480} style={{ maxWidth: "100%", height: "auto", borderRadius: 24 }} />
         <small className="robot-meta-label">Powered by Meta</small>
       </div>
     );
   return (
     <span className="v2-wordmark">
-      <RobotAvatar size={28} />
+      <BrandMark size={28} />
       <span>
         Bridge<span>Voice</span>
         <small className="robot-meta-label">Powered by Meta</small>

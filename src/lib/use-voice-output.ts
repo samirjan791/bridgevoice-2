@@ -2,7 +2,9 @@
 import { useEffect, useRef, useState } from "react";
 import type { Language } from "./languages";
 import { selectVoice } from "./voice-support";
+import { usePreferences } from "@/components/providers";
 export function useVoiceOutput(language: Language, volume: number, liveSession = false) {
+  const { settings } = usePreferences();
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]),
     [cloud, setCloud] = useState(false),
     [speaking, setSpeaking] = useState(false),
@@ -59,9 +61,11 @@ export function useVoiceOutput(language: Language, volume: number, liveSession =
     setError("");
     const cleaned = text.replace(/[#*_`]/g, "").trim();
     if (!cleaned) return;
-    const exact = selectVoice(voices, requestedLanguage);
+    const allowedVoices = requestedLanguage === "fa-AF" && !settings.allowPersian ? voices.filter(v => ["fa-af","prs","prs-af"].includes(v.lang.toLowerCase())) : voices;
+    const preferred = allowedVoices.find(v => v.voiceURI === settings.preferredVoices[requestedLanguage]);
+    const exact = preferred || selectVoice(allowedVoices, requestedLanguage);
     const fallback =
-      !exact && requestedLanguage === "fa-AF"
+      !exact && requestedLanguage === "fa-AF" && settings.allowPersian
         ? selectVoice(voices, requestedLanguage, true)
         : undefined;
     const selected = exact || fallback;
@@ -78,6 +82,7 @@ export function useVoiceOutput(language: Language, volume: number, liveSession =
       utterance.voice = selected;
       utterance.lang = selected.lang;
       utterance.volume = volume;
+      utterance.rate = settings.speechRate;
       utterance.onstart = () => {if(run===generation.current){setLoading(false);setSpeaking(true);}};
       utterance.onend = () => {
         if (run === generation.current) {
@@ -118,6 +123,7 @@ export function useVoiceOutput(language: Language, volume: number, liveSession =
       return;
     }
     const persian = requestedLanguage === "fa-AF";
+    if (persian && !settings.allowPersian) { setError("Dari cloud speech requires explicit Persian-pronunciation agreement in Settings. No Persian voice was used."); return; }
     if (
       !liveSession && !window.confirm(
         (persian
@@ -146,7 +152,7 @@ export function useVoiceOutput(language: Language, volume: number, liveSession =
         body: JSON.stringify({
           text: cleaned,
           language: requestedLanguage,
-          allowPersian: persian,
+          allowPersian: persian && settings.allowPersian,
           consent: true,
         }),
         signal: request.current.signal,

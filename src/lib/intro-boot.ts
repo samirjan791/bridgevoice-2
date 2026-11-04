@@ -3,7 +3,7 @@
  * decided BEFORE first paint (no wrong-theme flash, no UI-then-intro flicker).
  * Every storage access is wrapped in try/catch; it must work with storage blocked.
  */
-export const SETTINGS_KEY = "bridgevoice.settings.v2";
+export const SETTINGS_KEY = "bridgevoice.settings.v3";
 export const INTRO_SESSION_KEY = "bridgevoice.intro.v1";
 
 export const bootScript = `(function(){try{

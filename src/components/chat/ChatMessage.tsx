@@ -1,6 +1,6 @@
 "use client";
 import { userFollowUps } from "@/lib/chat/follow-ups";
-import { RobotAvatar } from "../brand/RobotAvatar";
+import { BrandMark } from "../brand/BrandMark";
 import { APP_NAME } from "@/lib/brand";
 
 import { LinkedMeaning } from "./LinkedMeaning";
@@ -17,6 +17,8 @@ import {
   Check,
 } from "lucide-react";
 import { ChatMessage as Message } from "@/lib/chat/schema";
+import { extractWebsites, stripCodeBlocks } from "@/lib/website";
+import { WebsitePreview } from "./WebsitePreview";
 import { MeaningGuardCard } from "./MeaningGuardCard";
 import { saveEntry } from "@/lib/storage";
 import { usePreferences } from "../providers";
@@ -89,10 +91,11 @@ export function ChatMessage({
         <div className="user-actions"><button aria-label="Copy message" onClick={async()=>{try{await navigator.clipboard.writeText(message.content);notify("Message copied.");}catch{notify("Unable to copy message.");}}}><Copy size={15}/></button><button aria-label="Edit message" onClick={()=>{setEditText(message.content);setEditing(true);}}><Pencil size={15}/></button></div>
       </article>
     );
+  const { text: visibleText, sites } = extractWebsites(message.content);
   return (
     <article className="chat-message assistant">
       <div className="assistant-label">
-        <RobotAvatar size={28} />
+        <BrandMark size={28} />
         <span className="assistant-identity"><b>{APP_NAME}</b><small className="robot-meta-label">Powered by Meta</small></span>
       </div>
       <div
@@ -111,9 +114,12 @@ export function ChatMessage({
             ),
           }}
         >
-          {message.content}
+          {visibleText}
         </ReactMarkdown>
       </div>
+      {sites.map((html, i) => (
+        <WebsitePreview key={i} html={html} index={i} />
+      ))}
       {result?.sourcePassage && <MeaningCheck source={result.sourcePassage} language={result.sourceLanguage} busy={busy} onReview={onMeaningReview} />}
       {result?.sourcePassage && result.translation && <LinkedMeaning source={result.sourcePassage} translation={result.translation} sourceLanguage={result.sourceLanguage} targetLanguage={result.targetLanguage} />}
       {result?.translation && (
@@ -179,7 +185,7 @@ export function ChatMessage({
           onClick={async () => {
             try {
               await navigator.clipboard.writeText(
-                message.content +
+                visibleText +
                   (result?.translation ? "\n\n" + result.translation : ""),
               );
               setCopied(true);
@@ -208,7 +214,7 @@ export function ChatMessage({
           }
           onClick={() =>
             onSpeak(
-              result?.translation || message.content,
+              result?.translation || stripCodeBlocks(message.content),
               result?.targetLanguage || "en",
             )
           }

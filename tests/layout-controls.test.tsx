@@ -68,22 +68,22 @@ it('upload menu has only two working file pickers and closes with Escape',()=>{
 it('settings navigation, search, language and appearance persist actual preferences',async()=>{
  render(<Providers><Settings/></Providers>);
  fireEvent.change(screen.getByLabelText('Interface language'),{target:{value:'ps'}});expect(document.documentElement.dir).toBe('rtl');
- fireEvent.change(screen.getByLabelText('Interface language'),{target:{value:'auto'}});expect(JSON.parse(localStorage.getItem('bridgevoice.settings.v2')!).autoLanguage).toBe(true);
+ fireEvent.change(screen.getByLabelText('Interface language'),{target:{value:'auto'}});expect(JSON.parse(localStorage.getItem('bridgevoice.settings.v3')!).autoLanguage).toBe(true);
  fireEvent.change(screen.getByLabelText('Translation language'),{target:{value:'fa-AF'}});
  fireEvent.click(screen.getByRole('button',{name:'Appearance'}));for(const theme of ['dark','light','system'])fireEvent.change(screen.getByLabelText('Theme'),{target:{value:theme}});
  fireEvent.change(screen.getByLabelText('Reading size'),{target:{value:'large'}});fireEvent.click(screen.getByLabelText(/Enable motion/));fireEvent.click(screen.getByLabelText('High contrast'));
- const saved=JSON.parse(localStorage.getItem('bridgevoice.settings.v2')!);expect(saved).toMatchObject({font:'large',motion:false,contrast:true,theme:'system',target:'fa-AF'});
+ const saved=JSON.parse(localStorage.getItem('bridgevoice.settings.v3')!);expect(saved).toMatchObject({font:'large',motion:false,contrast:true,theme:'system',target:'fa-AF'});
  fireEvent.change(screen.getByLabelText('Search settings'),{target:{value:'volume'}});expect(screen.getByLabelText('Read-aloud volume')).toBeTruthy();
- fireEvent.change(screen.getByLabelText('Read-aloud volume'),{target:{value:'0.3'}});fireEvent.click(screen.getByLabelText('Dictation'));fireEvent.click(screen.getByLabelText(/Automatically send finalized/));expect(JSON.parse(localStorage.getItem('bridgevoice.settings.v2')!)).toMatchObject({volume:.3,dictation:false,automatic:false});
+ fireEvent.change(screen.getByLabelText('Read-aloud volume'),{target:{value:'0.3'}});fireEvent.click(screen.getByLabelText('Dictation'));fireEvent.click(screen.getByLabelText(/Automatically send finalized/));expect(JSON.parse(localStorage.getItem('bridgevoice.settings.v3')!)).toMatchObject({volume:.3,dictation:false,automatic:false});
  fireEvent.change(screen.getByLabelText('Search settings'),{target:{value:'does not exist'}});expect(screen.getByText(/No settings match/)).toBeTruthy();
  fireEvent.click(screen.getByRole('button',{name:'Keyboard'}));expect(screen.getByText('Ctrl / ⌘ + K')).toBeTruthy();
  fireEvent.click(screen.getByRole('button',{name:'Meta connection'}));await screen.findByText(/No server key detected/);
  fireEvent.change(screen.getByLabelText(/Private deployment access code/),{target:{value:'test-only-code'}});fireEvent.click(screen.getByRole('button',{name:'Save access code for this tab'}));expect(sessionStorage.getItem('bridgevoice.access')).toBe('test-only-code');
 });
 it('history toggle and deletion operate on local storage',()=>{
- render(<Providers><Settings/></Providers>);fireEvent.click(screen.getByRole('button',{name:'History & data'}));fireEvent.click(screen.getByLabelText('Save non-sensitive conversations on this device'));
- expect(JSON.parse(localStorage.getItem('bridgevoice.settings.v2')!).history).toBe(true);persistChat({id:'x',title:'Disposable test',updated:1,messages:[]});vi.stubGlobal('confirm',vi.fn(()=>true));fireEvent.click(screen.getByRole('button',{name:'Delete saved chat history'}));expect(localStorage.getItem(HISTORY_KEY)).toBeNull();
- localStorage.setItem(STORAGE_KEY,'[]');fireEvent.click(screen.getByRole('button',{name:'Delete all BridgeVoice browser data'}));expect(localStorage.getItem(STORAGE_KEY)).toBeNull();expect(localStorage.getItem('bridgevoice.settings.v2')).toBeNull();
+ render(<Providers><Settings/></Providers>);fireEvent.click(screen.getByRole('button',{name:'History & data'}));fireEvent.click(screen.getByLabelText('Save conversations on this device (off by default)'));
+ expect(JSON.parse(localStorage.getItem('bridgevoice.settings.v3')!).history).toBe(true);persistChat({id:'x',title:'Disposable test',updated:1,messages:[]});vi.stubGlobal('confirm',vi.fn(()=>true));fireEvent.click(screen.getByRole('button',{name:'Delete saved chat history'}));expect(localStorage.getItem(HISTORY_KEY)).toBeNull();
+ localStorage.setItem(STORAGE_KEY,'[]');fireEvent.click(screen.getByRole('button',{name:'Delete all BridgeVoice browser data'}));expect(localStorage.getItem(STORAGE_KEY)).toBeNull();expect(localStorage.getItem('bridgevoice.settings.v3')).toBeNull();
 });
 it('user copy/edit and assistant copy/regenerate/read-aloud invoke real handlers',async()=>{
  const save=vi.fn(),retry=vi.fn(),speak=vi.fn();const common={onFollow:vi.fn(),onRetry:retry,onEdit:vi.fn(),onSaveEdit:save,onDelete:vi.fn(),onFeedback:vi.fn(),onSpeak:speak,canSpeak:true,busy:false};

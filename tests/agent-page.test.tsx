@@ -33,3 +33,19 @@ it('starts a session on Start listening without a microphone', () => {
   expect(screen.getByLabelText('Message to agent')).toBeTruthy();
   expect(screen.getByLabelText('Message to agent')).not.toHaveProperty('disabled', true);
 });
+
+it('switches to a minimal voice screen while talking and returns to chat afterwards', () => {
+  render(<AgentPage />);
+  fireEvent.click(screen.getByRole('button', { name: 'Start listening' }));
+  expect(document.querySelector('main')?.className).toContain('voice-mode');
+  expect(screen.getByRole('button', { name: 'End session' })).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: 'End session' }));
+  expect(document.querySelector('main')?.className).not.toContain('voice-mode');
+});
+
+it('offers suggestion chips that start a session when tapped', () => {
+  render(<AgentPage />);
+  expect(screen.getByRole('button', { name: 'Build a website' })).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: 'Build a website' }));
+  expect(screen.getByRole('button', { name: 'End session' })).toBeTruthy();
+});

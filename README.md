@@ -1,68 +1,108 @@
-# BridgeVoice 3.4.1 — compact mobile input
+# BridgeVoice — Real-time co-pilot for Pashto/Dari community interpreters
 
-Focused mobile input now uses a compact two-row layout without the heavy blue halo. It remains at the bottom of the visible viewport and grows with text. Original video and Meta integration are unchanged.
+**Live demo:** https://bridgevoice.us
+**Version:** 4.6.0
+**Built for:** Meta Global AI Developer Hackathon 2026 — Indie Developer track
 
-Extract into Downloads, run `cd "$HOME/Downloads/bridgevoice-3.4.1"`, then `bash START_VOICE_UPDATE.command`. Open http://127.0.0.1:3002 after Ready.
+## What it is
 
-See COMPACT_COMPOSER_UPDATE.md for scope and verification.
+BridgeVoice is a real-time multilingual co-pilot for Pashto/Dari community
+interpreters and the families they serve. Community interpreters and families
+who speak Pashto or Dari often face essential information — medical
+instructions, school letters, official forms — written in difficult English.
+A mistranslated word or number can change what someone does. BridgeVoice
+helps them understand that language while keeping the human in control of
+the final meaning. It does not replace the human interpreter.
 
-# BridgeVoice 3.4 — mobile composer, attachment cards, original video
+## Who it serves
 
-Current release: the phone composer sits at the bottom and expands above the keyboard when focused. Photos and documents appear as removable cards inside the composer. The profile uses the latest uploaded ORIGINAL 2.966667-second video, at normal speed, silently looping. No generated portrait or artificial mouth animation is displayed. Meta API behavior and the credential-preserving launcher remain.
+- Community interpreters working in Pashto and Dari (with English and
+  Spanish also supported in the app).
+- The families they serve: people who need to understand difficult wording
+  in simple language before they act on it.
 
-Extract into Downloads and run `cd "$HOME/Downloads/bridgevoice-3.4"` then `bash START_VOICE_UPDATE.command`. Open http://127.0.0.1:3002 after Ready. See MOBILE_ATTACHMENTS_UPDATE.md. Earlier sections below describe release history.
+## Headline feature: live voice
 
-# BridgeVoice 3.3 — front-facing animated robot
+One tap on "Start listening" on the live voice screen (`/agent`) and the app
+keeps listening, answers out loud, and can be interrupted by speaking — with
+typed chat as a fallback. The voice screen is the centerpiece of this
+release, together with a private access gate (see below).
 
-This release replaces the side-facing profile footage with a generated frontal view of the original visor-wearing android design, inspired by the supplied video. Subtle idle motion and a subtle mouth animation use CSS. Mouth movement runs during actual speech playback, stopping on mute, pause, interruption, completion and errors. It is not phoneme-level lip sync. Meta translation, keys and routes are preserved.
+## What else it does
 
-Run `bash START_VOICE_UPDATE.command` inside the extracted folder. Open http://127.0.0.1:3002 after Ready. See ROBOT_FRONT_UPDATE.md for details.
+- Chats in English, Pashto, Dari, and Spanish, and explains difficult
+  wording in simple language.
+- Checks critical details such as numbers and negations before they are
+  acted on (meaning checks — the human judges the meaning).
+- Answers questions about uploaded documents with exact quoted excerpts.
+- Keeps history local and off by default; the voice-screen transcript is
+  memory-only.
+- A 120-entry interpreter glossary is wired into agent requests (see
+  Honest limits below).
 
-# BridgeVoice 3.2 — animated robot profile
+## Access gate — note for judges
 
-Unzip this build, then run `bash START_VOICE_UPDATE.command` inside its folder. Open http://127.0.0.1:3002 when Terminal says Ready. The launcher preserves existing Meta configuration or copies it from a configured BridgeVoice folder in Downloads; it does not print keys. See ROBOT_PROFILE_UPDATE.md for changes and verification.
+The live deployment at bridgevoice.us is access-gated: chat without the
+private code returns 401, so strangers cannot burn model calls. **The gate
+comes off before judging** so judges can use the app without a code, and it
+goes back on after judging. The gate is a deployment control, not a product
+feature.
 
-# BridgeVoice 3.1
+## How it works
 
-**Don’t just translate words. Protect meaning.**
+Browser → secure server → Meta Model API (Muse Spark) → checked output.
+Meta's model supplies the core reasoning and language generation:
+understanding the question, producing the Pashto/Dari explanation, and
+carrying the live voice conversation. BridgeVoice adds the workflow around
+it — the voice screen, the meaning checks, the document excerpts, and the
+access gate — but without the Meta model there is no conversation at all.
 
-A targeted upgrade of the supplied BridgeVoice 2.1.0 Next.js application. This is a controlled multilingual communication prototype, not a medical safety system or production telephone interpreter.
+## Run it locally
 
-The existing Meta chat, glossary, document/photo flow, local history, themes, RTL interface, writing intro and voice controls remain. New work adds BridgeProof pattern checks and a separate optional Meta review, explicit two-person turns, a state-driven Living Bridge, browser capability reporting and a labeled local BridgeCall routing lab.
-
-## Follow-up suggestions
-
-Suggestions now represent requests from you, not questions the AI asks you. Clicking sends the displayed message with conversation context. See [follow-up update](FOLLOW_UP_UPDATE.md).
-
-## Voice-screen update
-
-Minimal full-screen voice layout, controls at the bottom, language/privacy options behind Voice settings, a genuine microphone waveform, aligned sidebar navigation and a polished opening bridge sequence. Meta and voice orchestration are unchanged. See [update report](VOICE_FOCUS_UPDATE.md).
-
-On macOS, extract into Downloads and run `cd ~/Downloads/bridgevoice-3.1` then `bash START_VOICE_UPDATE.command`. The launcher preserves an existing configured key, or copies the newest configured BridgeVoice `.env.local` from Downloads. It starts on http://127.0.0.1:3002. Existing projects remain untouched.
-
-## Run locally
-
-Install Node.js 24.15+ and npm. Extract the archive, then:
+Requires Node.js 24.15+ and npm.
 
 ```sh
-cd ~/Downloads/bridgevoice-3.1
 npm ci
-# Copy only if you do not already have .env.local:
-[ -f .env.local ] || cp .env.example .env.local
+cp .env.example .env.local   # then put your own Meta key in .env.local
 npm run dev
 ```
 
-Open http://127.0.0.1:3000. Configure your existing Meta key privately in `.env.local` and restart. Do not put a key in chat, a screenshot, public source, or NEXT_PUBLIC variables. An unconfigured app shows honest connection errors rather than sample AI answers. The archive contains no private key.
+Open http://127.0.0.1:3000. Configure your own key privately in `.env.local`
+and restart. This repository contains no private key: the only `.env` file
+is `.env.example` (placeholders only). Never put a key in chat, a
+screenshot, public source, or a `NEXT_PUBLIC_` variable.
 
-## Evidence and delivery guide
+Tests: `npm test` (Vitest). Typecheck: `npm run typecheck`.
 
-- [Implementation report](docs/v3/IMPLEMENTATION_REPORT.md): feature-by-feature status and remaining work.
-- [Architecture](ARCHITECTURE.md): actual flow and separate proposed telephone gateway.
-- [Local development and environment](docs/v3/LOCAL_DEVELOPMENT.md).
-- [Deployment](docs/v3/DEPLOYMENT.md).
-- [Telecommunications integration](docs/v3/TELECOM_GUIDE.md).
-- [Competition demonstration](docs/v3/DEMO_SCRIPT.md).
-- [Testing and regression checklist](docs/v3/TEST_REPORT.md).
-- [Exact changed files](docs/v3/CHANGED_FILES.md).
+## Pre-event disclosure
 
-Original source hashes and baseline logs are in `evidence/v3-baseline`; updated check logs are in `evidence/v3`. Older release notes describe historical builds, not current readiness. The v3 reports take precedence.
+BridgeVoice existed before October 26, 2026. The base app predates the
+hackathon. Hackathon-period work (October 26 – November 4, 2026) is the
+BridgeAgent live voice page and the JARVIS-style live voice screen with the
+private access gate. Only hackathon-period work is shown as new in the demo.
+
+## Honest limits — please do not overclaim
+
+- Glossary entries are AI drafts, not professionally reviewed.
+- Spoken Pashto/Dari depends on the device and browser; it is not
+  certified and translations are not professionally verified.
+- BridgeCall is a simulation with fictional participants, not real
+  telephone calling. There is no WebRTC or phone path.
+- The app talks and answers only — it does not build software, make phone
+  calls, book anything, or take external actions.
+- The daily model-call quota is process-local, not a billing cap; a Meta
+  account spending cap is still advised for the live deployment.
+- Real image generation and verified translation/terminology are not part
+  of this release.
+
+## Repository layout
+
+- `src/` — Next.js app source (chat, live voice screen, agent page,
+  document handling, meaning checks, glossary).
+- `public/` — static assets. Brand images and example documents are binary
+  and are intentionally not included in text-only snapshots of this repo.
+- `tests/` — Vitest suites, including route and access-gate tests.
+- `docs/` — architecture and implementation notes.
+- `wrangler.jsonc` / `open-next.config.ts` — Cloudflare Workers deployment
+  via the OpenNext adapter. Deploys must preserve the worker's existing
+  plain variables (notably the Meta API key) with `--keep-vars`.

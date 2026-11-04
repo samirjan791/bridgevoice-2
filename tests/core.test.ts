@@ -100,8 +100,8 @@ describe("glossary and languages", () => {
     expect(packs["fa-AF"].dir).toBe("rtl");
     expect(packs.en.dir).toBe("ltr");
   });
-  it("does not claim Pashto speech support", () =>
-    expect(packs.ps.speech).toBeNull());
+  it("uses a Pashto speech locale tag (UI warns device support required)", () =>
+    expect(packs.ps.speech).toBe("ps-AF"));
 });
 describe("personal glossary", () => {
   it("roundtrips validated JSON", () =>

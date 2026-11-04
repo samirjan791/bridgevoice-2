@@ -1,7 +1,14 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { usePreferences } from "@/components/providers";
+import "./agent.css";
 import { Mic, MicOff, PhoneOff, Volume2, VolumeX, Send } from "lucide-react";
+import { extractWebsites, stripCodeBlocks } from "@/lib/website";
+import { WebsitePreview } from "@/components/chat/WebsitePreview";
+import { matchGlossary } from "@/lib/glossary";
+import { detectLanguage } from "@/lib/chat/router";
+import type { Language } from "@/lib/languages";
 
 type SpeechResultItem = { transcript: string };
 type SpeechResultEntry = ArrayLike<SpeechResultItem> & { isFinal?: boolean };
@@ -12,8 +19,17 @@ type Line = { role: "user" | "agent"; text: string };
 type Status = "idle" | "listening" | "thinking" | "speaking";
 const choices = [{ id: "en", label: "English", speech: "en-US" }, { id: "es-US", label: "Spanish", speech: "es-US" }, { id: "ps", label: "Pashto (device support required)", speech: "ps-AF" }, { id: "fa-AF", label: "Dari (device support required)", speech: "fa-AF" }] as const;
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9\u0600-\u06FF\s]/g, " ").replace(/\s+/g, " ").trim();
+const LANG_LABELS = { en: "English", "es-US": "Spanish", ps: "Pashto", "fa-AF": "Dari" } as const;
+const isImageRequest = (text: string) => /\b(draw|generate|create|make|design)\b[\s\S]{0,80}\b(image|picture|photo|illustration)\b/i.test(text);
+const SUGGESTIONS = [
+  { label: "Build a website", message: "Build me a sample website for a small bakery" },
+  { label: "Plan my day", message: "Help me plan my day" },
+  { label: "Create a project", message: "Help me create a project plan" },
+  { label: "Analyze data", message: "Help me analyze some data" },
+] as const;
 
 export default function AgentPage() {
+  const { settings, update } = usePreferences();
   const [active, setActive] = useState(false), [listening, setListening] = useState(false), [busy, setBusy] = useState(false), [speaking, setSpeaking] = useState(false), [muted, setMuted] = useState(false);
   const [language, setLanguage] = useState<(typeof choices)[number]["id"]>("en"), [name, setName] = useState("Boss"), [input, setInput] = useState(""), [lines, setLines] = useState<Line[]>([]), [interim, setInterim] = useState(""), [error, setError] = useState("");
   const recognition = useRef<Recognition | null>(null), controller = useRef<AbortController | null>(null);
@@ -21,6 +37,7 @@ export default function AgentPage() {
   const history = useRef<Line[]>([]), voiceEpoch = useRef(0), sendRef = useRef<(text: string) => void>(() => {});
   const speechQueue = useRef<string[]>([]), currentChunk = useRef("");
 
+  useEffect(() => { setName(settings.agentTitle); const l = settings.agentLanguage || settings.target; setLanguage(l); langRef.current = l; }, [settings.agentTitle, settings.agentLanguage, settings.target]);
   const stopSpeech = useCallback(() => {
     speechQueue.current = []; currentChunk.current = ""; speakingRef.current = false; setSpeaking(false);
     try { window.speechSynthesis?.cancel(); } catch { /* no synthesis */ }
@@ -30,15 +47,22 @@ export default function AgentPage() {
     if (typeof window === "undefined" || !window.speechSynthesis) { speakingRef.current = false; setSpeaking(false); return; }
     const chunk = speechQueue.current.shift()!; currentChunk.current = chunk; speakingRef.current = true; setSpeaking(true);
     const u = new SpeechSynthesisUtterance(chunk);
-    u.lang = choices.find((x) => x.id === langRef.current)?.speech || "en-US"; u.rate = 1;
+    u.lang = choices.find((x) => x.id === langRef.current)?.speech || "en-US"; u.rate = settings.speechRate; u.volume = settings.volume;
+    const installed = window.speechSynthesis.getVoices();
+    const target = langRef.current;
+    const permitted = installed.filter(v => target !== "fa-AF" || settings.allowPersian || ["fa-af","prs","prs-af"].includes(v.lang.toLowerCase()));
+    const chosen = permitted.find(v => v.voiceURI === settings.preferredVoices[target]) || permitted.find(v => target === "fa-AF" ? (["fa-af","prs","prs-af"].includes(v.lang.toLowerCase()) || (settings.allowPersian && v.lang.toLowerCase() === "fa-ir")) : v.lang.toLowerCase().startsWith(u.lang.toLowerCase().split("-")[0]));
+    if (chosen) { u.voice = chosen; u.lang = chosen.lang; }
+    else if (target === "fa-AF") { setError("No permitted Dari voice is installed. Speech skipped; text remains available."); speakingRef.current=false;setSpeaking(false);return; }
     u.onend = () => { currentChunk.current = ""; playNext(); };
     u.onerror = () => { currentChunk.current = ""; playNext(); };
     window.speechSynthesis.speak(u);
-  }, []);
+  }, [settings.speechRate, settings.volume, settings.preferredVoices, settings.allowPersian]);
   const speak = useCallback((text: string) => {
     if (mutedRef.current || !activeRef.current) return;
     stopSpeech();
-    const clean = text.slice(0, 3000);
+    const stripped = stripCodeBlocks(text);
+    const clean = (stripped ? stripped : "Your website is ready below.").slice(0, 3000);
     const parts = clean.match(/[^.!?]+[.!?]+["')\]]*\s*/g) || [clean];
     const chunks: string[] = [];
     for (const p of parts) {
@@ -114,14 +138,32 @@ export default function AgentPage() {
     busyRef.current = true; setBusy(true); setError(""); setInput("");
     const previous = history.current.slice(-10);
     history.current = [...history.current, { role: "user", text: message }]; setLines([...history.current]);
+    const switched = detectLanguage(message);
+    if (switched && switched !== langRef.current) {
+      changeLanguage(switched);
+      const notice = `Switching to ${LANG_LABELS[switched]}.`;
+      history.current = [...history.current, { role: "agent", text: notice }]; setLines([...history.current]);
+      speak(notice);
+      busyRef.current = false; setBusy(false);
+      return;
+    }
+    if (isImageRequest(message)) {
+      const notice = "Image generation is not connected yet. No picture has been generated.";
+      history.current = [...history.current, { role: "agent", text: notice }]; setLines([...history.current]);
+      speak(notice);
+      busyRef.current = false; setBusy(false);
+      return;
+    }
     try {
-      const identity = `You are BridgeAgent Live, the helpful AI assistant inside BridgeVoice. The person speaking is the owner of this workspace and prefers to be addressed as ${name.trim().slice(0, 60) || "Boss"}. Treat this as a conversational preference, not authentication or authorization. Keep spoken replies short and natural, like a live voice conversation. Never claim to have used tools or performed actions you did not actually perform. You can explain and plan tasks but this voice interface has no code execution or external action tools. Answer the user's next request.`;
+      const identity = `You are BridgeAgent Live, the helpful AI assistant inside BridgeVoice. The person speaking is the owner of this workspace and prefers to be addressed as ${name.trim().slice(0, 60) || "Boss"}. Treat this as a conversational preference, not authentication or authorization. Keep spoken replies short and natural, like a live voice conversation. Never claim to have used tools or performed actions you did not actually perform. You can explain and plan tasks, and when the user asks for a website, build it: write one short spoken sentence, then the complete single-file HTML document in one fenced html code block. That block is how this interface delivers websites — the page shows a live preview with download — never describe the site instead of building it. Keep the file compact and self-contained, with inline CSS and scripts and no external files. This voice interface has no other code execution or external action tools. Answer the user's next request.`;
+      const glossaryMatches = matchGlossary(message, langRef.current as Language);
+      const glossaryNote = glossaryMatches.length ? `\n\nRelevant glossary terms (unreviewed drafts \u2014 verify before relying on them): ${glossaryMatches.slice(0, 6).map((e) => { const t = (e as unknown as Record<string, string | undefined>)[langRef.current]; return t && t !== e.en ? `${e.en} (${t})` : e.en; }).join("; ")}` : "";
       let access = "";
       try { access = sessionStorage.getItem("bridgevoice.access") || ""; } catch { /* private mode */ }
       const response = await fetch("/api/chat", {
         method: "POST", signal: abort.signal,
         headers: { "Content-Type": "application/json", "x-bridgevoice-access": access },
-        body: JSON.stringify({ message: `${identity}\n\nUser request: ${message}`, messages: previous.map((x) => ({ role: x.role === "agent" ? "assistant" : "user", content: x.text })), language: langRef.current, sourceLanguage: langRef.current, task: "chat", level: "standard" }),
+        body: JSON.stringify({ message: `${identity}\n\nUser request: ${message}${glossaryNote}`, messages: previous.map((x) => ({ role: x.role === "agent" ? "assistant" : "user", content: x.text })), language: langRef.current, sourceLanguage: langRef.current, task: "chat", level: "standard" }),
       });
       if (response.status === 401) throw new Error("This deployment needs its access code. Enter it in Settings, then come back here.");
       if (!response.ok) throw new Error(`AI service unavailable (${response.status})`);
@@ -150,8 +192,12 @@ export default function AgentPage() {
   }, [name, speak, stopSpeech]);
   sendRef.current = send;
 
+  const beginTyped = () => {
+    activeRef.current = true; setActive(true); setError(""); setInterim("");
+  };
+  const sendSuggestion = (text: string) => { beginTyped(); sendRef.current(text); };
   const begin = () => {
-    activeRef.current = true; setActive(true); setError(""); setLines([]); history.current = []; setInterim("");
+    activeRef.current = true; setActive(true); setError(""); setInterim("");
     listen();
     speak(`Hello ${name.trim() || "Boss"}. I'm listening. Just speak, and I'll answer right away.`);
   };
@@ -160,6 +206,7 @@ export default function AgentPage() {
     if (mutedRef.current) stopSpeech();
   };
   const changeLanguage = (next: typeof language) => {
+    update({agentLanguage: next});
     langRef.current = next; setLanguage(next);
     if (activeRef.current) { stopRecognition(); window.setTimeout(() => { if (activeRef.current) listen(); }, 150); }
   };
@@ -168,60 +215,20 @@ export default function AgentPage() {
   const statusText = status === "idle" ? "Ready" : status === "listening" ? "Listening…" : status === "thinking" ? "Thinking…" : "Speaking…";
   const needsCode = error.includes("access code");
   return (
-    <main style={{ minHeight: "100dvh", background: "radial-gradient(ellipse at 50% 0%, #0b2a6b 0%, #04070f 55%, #02040a 100%)", color: "#eef3ff", padding: "24px 16px 60px" }}>
-      <style>{`
-        .bv-orb{width:170px;height:170px;border-radius:50%;margin:0 auto 22px;position:relative;display:grid;place-items:center;background:radial-gradient(circle at 35% 30%, #7fb0ff, #2f5fd0 45%, #0a1c4d 75%, #050d26);box-shadow:0 0 45px #2f6bff88, inset 0 0 35px #9cc2ff66;animation:bv-pulse 3.2s ease-in-out infinite}
-        .bv-orb.listening{animation:bv-pulse 1.4s ease-in-out infinite;box-shadow:0 0 70px #3d7bffaa, inset 0 0 40px #bcd6ff88}
-        .bv-orb.speaking{animation:bv-ripple 1.1s ease-out infinite}
-        .bv-orb.thinking{animation:bv-spin 1.6s linear infinite}
-        .bv-orb::before,.bv-orb::after{content:"";position:absolute;inset:-14px;border-radius:50%;border:2px solid #4d84ff55}
-        .bv-orb.listening::before{animation:bv-ring 1.8s ease-out infinite}
-        .bv-orb.speaking::after{animation:bv-ring 1.1s ease-out infinite}
-        @keyframes bv-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
-        @keyframes bv-ripple{0%{transform:scale(1)}50%{transform:scale(1.12)}100%{transform:scale(1)}}
-        @keyframes bv-spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-        @keyframes bv-ring{from{transform:scale(0.9);opacity:0.9}to{transform:scale(1.35);opacity:0}}
-      `}</style>
-      <div style={{ maxWidth: 760, margin: "auto" }}>
-        <Link href="/app" style={{ color: "#a7bfff" }}>← Back to BridgeVoice</Link>
-        <header style={{ textAlign: "center", marginTop: 18 }}>
-          <h1 style={{ fontSize: 30, fontWeight: 700 }}>BridgeAgent Live</h1>
-          <p style={{ color: "#aeb8d0" }}>Speak, and it talks back — a live voice screen, no phone number required</p>
-        </header>
-        <section style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 22 }}>
-          <label style={{ flex: "1 1 180px" }}>How should I address you?<input aria-label="Preferred title" maxLength={60} value={name} onChange={(e) => setName(e.target.value)} disabled={active} style={{ display: "block", width: "100%", padding: 11, marginTop: 5, borderRadius: 10, background: "#141c30", color: "white", border: "1px solid #3d4c74" }} /></label>
-          <label style={{ flex: "1 1 180px" }}>Conversation language<select aria-label="Conversation language" value={language} onChange={(e) => changeLanguage(e.target.value as typeof language)} style={{ display: "block", width: "100%", padding: 11, marginTop: 5, borderRadius: 10, background: "#141c30", color: "white", border: "1px solid #3d4c74" }}>{choices.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}</select></label>
+    <main className={`agent-page agent-chatbox${active ? " voice-mode" : ""}`}>
+      <div className="agent-top"><Link className="agent-brand" href="/app">⌁ <strong>Bridge<span>Voice</span></strong></Link><div className="agent-toplinks"><Link href="/app">Chat</Link><Link href="/settings#live">Settings</Link></div></div>
+      <div className="agent-main agent-chat-column">
+        {!active && (<><header className="agent-heading"><h2 className="agent-eyebrow" aria-label="BridgeAgent Live">✦ BRIDGEAGENT LIVE</h2><h1>Good to see you, {name.trim() || "Boss"}.</h1><p>Your AI agent — talk naturally, get answers.</p></header>
+        <section className="agent-preferences"><label>How should I address you?<input aria-label="Preferred title" maxLength={60} value={name} onChange={e=>{setName(e.target.value);update({agentTitle:e.target.value});}} disabled={active}/></label><label>Conversation language<select value={language} onChange={e=>changeLanguage(e.target.value as typeof language)}>{choices.map(c=><option key={c.id} value={c.id}>{c.label}</option>)}</select></label></section></>)}
+        <section className={`agent-voicebar ${active ? "is-active" : "is-idle"}`}><div aria-label="Agent status" className={`agent-orb ${settings.orbAnimation && active ? "agent-orb-active" : ""} ${status}`}><Mic size={24}/></div><div className="agent-voicebar-text"><h2 className="agent-state">{statusText}</h2><p className="agent-hint">{active ? "I'm listening. You can speak over me to interrupt." : "Tap Start listening to begin. No wake word or background listening."}</p>{interim && settings.showTranscript && <p role="status" className="agent-interim">Hearing: {interim}</p>}</div>
+          <div className="agent-actions">{!active ? <button className="agent-start" onClick={begin}><Mic size={19}/> Start listening</button> : <><button className="agent-circle agent-end" onClick={stop} aria-label="End session"><PhoneOff/></button><button className="agent-circle" onClick={toggleMute} aria-label={muted?"Unmute speaker":"Mute speaker"}>{muted?<VolumeX/>:<Volume2/>}</button><button className="agent-circle" onClick={()=>{stopRecognition();window.setTimeout(()=>{if(activeRef.current)listen();},150);}} aria-label={listening?"Restart listening":"Start listening"}>{listening?<Mic/>:<MicOff/>}</button></>}</div>
         </section>
-        <section style={{ textAlign: "center", padding: "34px 8px 10px" }}>
-          <div aria-label="Agent status" className={`bv-orb ${active ? status : ""}`}><Mic size={58} color="#eaf1ff" /></div>
-          <h2 style={{ fontSize: 24 }}>{statusText}</h2>
-          <p style={{ color: "#aeb8d0", marginTop: 8 }}>{active ? "Just speak — it answers by itself. Speak over it any time to interrupt." : "One tap starts the microphone. After that it keeps listening and answers on its own."}</p>
-          {interim && <p style={{ color: "#9ab9ff", marginTop: 10 }}>Hearing: {interim}</p>}
-          <div style={{ display: "flex", justifyContent: "center", gap: 14, marginTop: 22, flexWrap: "wrap" }}>
-            {!active
-              ? <button onClick={begin} style={buttonStyle("#316be4")}>Start listening</button>
-              : <>
-                  <button onClick={stop} aria-label="End session" style={buttonStyle("#b93245")}><PhoneOff /> End session</button>
-                  <button onClick={toggleMute} aria-label={muted ? "Unmute speaker" : "Mute speaker"} style={buttonStyle("#34415c")}>{muted ? <VolumeX /> : <Volume2 />}</button>
-                  <button onClick={() => { stopRecognition(); window.setTimeout(() => { if (activeRef.current) listen(); }, 150); }} aria-label={listening ? "Listening on" : "Restart listening"} style={buttonStyle("#34415c")}>{listening ? <Mic /> : <MicOff />}</button>
-                </>}
-          </div>
-        </section>
-        {error && <div role="alert" style={{ padding: 12, background: "#53212b", borderRadius: 10, marginTop: 16 }}><p>{error}</p>{needsCode && <p style={{ marginTop: 8 }}><Link href="/settings" style={{ color: "#a7bfff" }}>Open Settings to enter the access code →</Link></p>}</div>}
-        <section aria-label="Conversation transcript" style={{ minHeight: 140, maxHeight: 400, overflowY: "auto", background: "#0d1526", padding: 16, borderRadius: 16, marginTop: 18 }}>
-          {lines.length === 0
-            ? <p style={{ color: "#aeb8d0" }}>Your conversation will appear here. This session is not saved to browser storage.</p>
-            : lines.map((line, i) => <p key={i} style={{ marginBottom: 14, lineHeight: 1.6, overflowWrap: "anywhere" }}><strong style={{ color: line.role === "agent" ? "#9ab9ff" : "#e5e7eb" }}>{line.role === "agent" ? "BridgeAgent" : "You"}: </strong>{line.text}</p>)}
-        </section>
-        <form onSubmit={(e) => { e.preventDefault(); send(input); }} style={{ display: "flex", gap: 8, marginTop: 14 }}>
-          <input value={input} onChange={(e) => setInput(e.target.value)} disabled={!active || busy} placeholder="Type instead…" aria-label="Message to agent" style={{ flex: 1, minWidth: 0, padding: 14, borderRadius: 16, border: "1px solid #3d4c74", background: "#141c30", color: "white" }} />
-          <button disabled={!active || busy || !input.trim()} aria-label="Send" style={buttonStyle("#316be4")}><Send /></button>
-        </form>
-        <p style={{ color: "#aeb8d0", fontSize: 12, marginTop: 20 }}>Voice recognition and read-aloud depend on your browser and installed language support. The agent calls you “Boss” as a preference; this does not grant special permissions. No real telephone connection or external actions are included — it talks and answers, it does not build software or call anyone. This deployment needs its access code for AI replies: enter it once per tab in Settings.</p>
+        {!active && lines.length === 0 && (<div className="agent-chips" aria-label="Suggestions">{SUGGESTIONS.map((s) => (<button key={s.label} type="button" className="agent-chip" onClick={() => sendSuggestion(s.message)}>{s.label}</button>))}</div>)}
+        {error && <div className="agent-error" role="alert">{error} {needsCode && <Link href="/settings#meta">Open access settings</Link>}</div>}
+        {settings.showTranscript && <section className={`agent-transcript ${settings.transcriptLarge?"agent-transcript-large":""}`} aria-label="Conversation transcript"><h2>Conversation</h2>{lines.length===0?<p className="agent-muted">Your conversation appears here. It is not saved to browser storage.</p>:lines.map((line,i)=>{ const shown = line.role==="agent" ? extractWebsites(line.text) : { text: line.text, sites: [] as string[] }; return (<div className={`agent-message ${line.role === "agent" ? "agent-line" : "user-line"}`} key={i}><strong>{line.role==="agent"?"BridgeAgent":"You"}</strong><p>{shown.text}</p>{shown.sites.map((html,j)=>(<WebsitePreview key={j} html={html} index={j} />))}</div>); })}</section>}
+        {active && (<form className="agent-compose" onSubmit={e=>{e.preventDefault();send(input);}}><input value={input} onChange={e=>setInput(e.target.value)} disabled={!active||busy} placeholder="Type a message instead…" aria-label="Message to agent"/><button disabled={!active||busy||!input.trim()} aria-label="Send"><Send size={19}/></button></form>)}
+        <p className="agent-disclaimer">Browser speech availability varies by device and language. Translations are not professionally verified. No real telephone connection or external actions are included — it talks and answers, and it can draft single-file website samples you can preview and download; it does not publish sites, call anyone, or take other external actions. This deployment needs its access code for AI replies: enter it once per tab in Settings.</p>
       </div>
     </main>
   );
-}
-function buttonStyle(background: string): React.CSSProperties {
-  return { background, color: "white", border: 0, borderRadius: 30, padding: "13px 20px", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8, minHeight: 48 };
 }
