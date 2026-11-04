@@ -198,7 +198,7 @@ export function ChatMessage({
           <RotateCcw size={15} />
         </button>
         {canSpeak && <button
-          aria-label="Read aloud"
+          aria-label="Read aloud or stop"
           disabled={!canSpeak}
           title={
             canSpeak

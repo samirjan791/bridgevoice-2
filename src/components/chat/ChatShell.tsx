@@ -13,9 +13,6 @@ import {
   Languages,
   SlidersHorizontal,
   X,
-  Pause,
-  Square,
-  Play,
 } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import { usePreferences } from "../providers";
@@ -513,6 +510,10 @@ export function ChatShell({ demo = false }: { demo?: boolean }) {
                   busy={chat.busy}
                   canSpeak={voice.canSpeakLanguage(message.result?.targetLanguage || "en")}
                   onSpeak={(s, l) => {
+                    if (voice.speaking || voice.loading) {
+                      voice.stop();
+                      return;
+                    }
                     setVoiceLanguage(l);
                     voice.speak(s, l);
                   }}
@@ -650,19 +651,6 @@ export function ChatShell({ demo = false }: { demo?: boolean }) {
             )}
             {mirror && <MeaningMirror {...{setMirror,setTask,original,setOriginal,proposed,setProposed,source,setSource,chat,send}} />}
             {options && <ChatOptions {...{task,setTask,setMirror,startBridge,level,setLevel,voiceLanguage,setVoiceLanguage,voice,settings,update,chat,newChat}} />}
-            {(voice.speaking || voice.loading) && (
-              <div className="speech-playback">
-                <span>{voice.loading ? "Preparing audio…" : voice.label}</span>
-                <button onClick={voice.togglePause} disabled={voice.loading}>
-                  {voice.paused ? <Play size={14} /> : <Pause size={14} />}
-                  {voice.paused ? "Resume" : "Pause"}
-                </button>
-                <button onClick={voice.stop}>
-                  <Square size={14} />
-                  Stop / mute
-                </button>
-              </div>
-            )}
             {voice.error && <small role="alert">{voice.error}</small>}
             <ChatComposer
               text={text}

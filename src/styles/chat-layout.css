@@ -149,3 +149,5 @@ input[type="checkbox"] {accent-color:var(--voice);}
 .live-voice .voice-caption {max-width:560px;max-height:120px;overflow:auto;}
 
 .chat-app .chat-message.user .user-actions{display:none}.chat-app .chat-message.user:hover .user-actions,.chat-app .chat-message.user:focus-within .user-actions{display:flex}
+
+.chat-app .chat-message.user > div[dir="auto"]{background:transparent;max-width:none;padding:0;border-radius:0}
