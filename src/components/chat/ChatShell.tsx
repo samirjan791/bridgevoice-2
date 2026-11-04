@@ -39,6 +39,7 @@ import {
 import {
   detectTask,
   detectLanguage,
+  detectMessageLanguage,
   detectLocalAction,
 } from "@/lib/chat/router";
 import { readHistory, persistChat, removeChat, toggleChatPin } from "@/lib/chat/history";
@@ -201,8 +202,13 @@ export function ChatShell({ demo = false }: { demo?: boolean }) {
       notify("Resume Bridge Mode before sending a segment.");
       return false;
     }
-    const selectedLanguage = bridge?settings.target:(detectLanguage(message) || settings.target);
-    if (!bridge && detectLanguage(message)) update({ target: selectedLanguage });
+    // Reply in the language the message is WRITTEN in (Pashto/Dari/Spanish),
+    // unless the user explicitly asked for another language. Only an explicit
+    // request changes the saved target; chatting in a language must not flip it.
+    const requested = detectLanguage(message);
+    const written = requested ? undefined : detectMessageLanguage(message);
+    const selectedLanguage = bridge?settings.target:(requested || written || settings.target);
+    if (!bridge && requested) update({ target: requested });
     if (/make it simpler|make it shorter/i.test(message)) setLevel("simple");
     if (/explain more|more detail/i.test(message)) setLevel("detailed");
     const local = detectLocalAction(message);
@@ -279,6 +285,10 @@ export function ChatShell({ demo = false }: { demo?: boolean }) {
       setText("");
       return true;
     }
+    // Clear the composer immediately on send (like ChatGPT): the message
+    // already lives in the chat transcript, so it must not linger in the box
+    // while the reply streams.
+    setText("");
     const ok = await chat.send(
       {
         message,

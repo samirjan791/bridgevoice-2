@@ -33,6 +33,24 @@ export function detectLanguage(text: string): Language | undefined {
   if (/(?:into|in|speak|answer|continue in)\s+english\b/i.test(text))
     return "en";
 }
+// Language the message itself is WRITTEN in (not a requested language).
+// Used so a greeting in Pashto/Dari/Spanish gets a reply in that language,
+// instead of falling back to the translation-target setting.
+export function detectMessageLanguage(text: string): Language | undefined {
+  // Pashto-specific letters (not used in Dari/Persian).
+  if (/[ټډړڼښږڅځېۍ]/.test(text)) return "ps";
+  // Any other Arabic-script text defaults to Dari.
+  if (/[\u0600-\u06FF]/.test(text)) return "fa-AF";
+  // Spanish punctuation or unambiguous Spanish words.
+  if (/[¿¡]/.test(text)) return "es-US";
+  if (
+    /\b(hola|gracias|buenos d[ií]as|buenas (tardes|noches)|adiós|por favor|perdón|quiero|necesito|ayuda|tengo|puedo|dime|cómo|estás|está|están|gusta|habla|español|qué|cuándo|dónde)\b/i.test(
+      text,
+    )
+  )
+    return "es-US";
+  return undefined;
+}
 export function effectiveTask(r: ChatRequest) {
   return r.task === "auto" ? detectTask(r.message, !!r.document) : r.task;
 }
