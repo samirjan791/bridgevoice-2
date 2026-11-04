@@ -1,28 +1,26 @@
 "use client";
 import { useEffect, useState } from "react";
-import { WORDMARK_GLYPHS, WORDMARK_TEXT, WORDMARK_VIEWBOX } from "./wordmark-paths";
 
 /**
- * Opening sequence: two greetings cross a bridge that draws itself, the
- * BridgeVoice wordmark is written stroke by stroke, and the tagline types in.
+ * Opening sequence (BridgeVoice intro animation, approved 2026-11-03):
+ * sound ripples radiate while a bridge mark draws itself in fine lines,
+ * the BridgeVoice wordmark wipes in, then the intro lifts and the app
+ * is revealed underneath.
  *
+ * Gating contract (unchanged, see src/lib/intro-boot.ts):
  * - The overlay is server-rendered but hidden by CSS unless the inline boot
- *   script (see src/lib/intro-boot.ts) sets <html data-intro="play">.
- * - It plays once per browser session, never under prefers-reduced-motion,
- *   and can be switched off in Settings.
+ *   script sets <html data-intro="play">.
+ * - It plays once per browser session, never under prefers-reduced-motion
+ *   or when motion is off, and can be switched off in Settings.
  * - Click, tap, Escape, Enter or Space skips it at any time.
- * - Only transform, opacity and SVG stroke-dashoffset are animated.
- * - Arabic-script text is never split per letter (it would break joining).
+ * - Only transform, opacity, filter and SVG stroke-dashoffset are animated.
  */
-export const INTRO_TAGLINE = "Every Voice Deserves to Be Understood.";
-const TOTAL_MS = 3100;
-const TYPE_START_MS = 1850;
-const TYPE_STEP_MS = 22;
+const TOTAL_MS = 4300;
+const LEAVE_MS = 900;
 
 export function Intro() {
   const [active, setActive] = useState(true);
   const [leaving, setLeaving] = useState(false);
-  const [typed, setTyped] = useState("");
 
   useEffect(() => {
     const root = document.documentElement;
@@ -36,14 +34,14 @@ export function Intro() {
       if (finished) return;
       finished = true;
       timers.forEach((id) => window.clearTimeout(id));
-      window.clearInterval(typer);
       window.removeEventListener("keydown", onKey, true);
+      window.removeEventListener("bridgevoice:skip-intro", finish);
       setLeaving(true);
       timers.push(
         window.setTimeout(() => {
           root.dataset.intro = "done";
           setActive(false);
-        }, 320),
+        }, LEAVE_MS),
       );
     };
     const onKey = (e: KeyboardEvent) => {
@@ -54,22 +52,10 @@ export function Intro() {
     };
     window.addEventListener("keydown", onKey, true);
     window.addEventListener("bridgevoice:skip-intro", finish);
-    let i = 0;
-    let typer = 0;
-    timers.push(
-      window.setTimeout(() => {
-        typer = window.setInterval(() => {
-          i += 1;
-          setTyped(INTRO_TAGLINE.slice(0, i));
-          if (i >= INTRO_TAGLINE.length) window.clearInterval(typer);
-        }, TYPE_STEP_MS);
-      }, TYPE_START_MS),
-    );
     timers.push(window.setTimeout(finish, TOTAL_MS));
     return () => {
       finished = true;
       timers.forEach((id) => window.clearTimeout(id));
-      window.clearInterval(typer);
       window.removeEventListener("keydown", onKey, true);
       window.removeEventListener("bridgevoice:skip-intro", finish);
     };
@@ -83,63 +69,69 @@ export function Intro() {
       aria-hidden="true"
       onClick={() => window.dispatchEvent(new Event("bridgevoice:skip-intro"))}
     >
-      <div className="intro-stage">
-        <div className="intro-bridge-wrap">
-          <span className="intro-greet intro-greet-a">
-            <span className="g-from" lang="en">
-              Hello
-            </span>
-            <span className="g-to" lang="fa-AF" dir="rtl">
-              سلام
-            </span>
-          </span>
-          <span className="intro-greet intro-greet-b">
-            <span className="g-from" lang="fa-AF" dir="rtl">
-              سلام
-            </span>
-            <span className="g-to" lang="en">
-              Hello
-            </span>
-          </span>
-          <svg
-            className="intro-bridge"
-            viewBox="0 0 64 64"
-            fill="none"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path className="b-arch" pathLength={1} d="M12 38c10-24 30-24 40 0" />
-            <path className="b-deck" pathLength={1} d="M12 43h40" />
-            <path className="b-pillars" pathLength={1} d="M24 31v11M32 26v17M40 31v11" />
-            <path className="b-ends" pathLength={1} d="M8 27v8M56 27v8" />
-            <path className="intro-light-trace" pathLength={1} d="M12 38c10-24 30-24 40 0" />
+      <div className="intro-col">
+        <div className="intro-markwrap">
+          <i className="intro-rp" style={{ animationDelay: ".3s" }} />
+          <i className="intro-rp" style={{ animationDelay: ".9s" }} />
+          <i className="intro-rp" style={{ animationDelay: "1.5s" }} />
+          <svg viewBox="0 0 400 400" aria-hidden="true">
+            <defs>
+              <linearGradient id="gBar" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stopColor="#5ADCFF" />
+                <stop offset="1" stopColor="#2D7BFF" />
+              </linearGradient>
+              <linearGradient id="gDeck" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0" stopColor="#2FC9F5" />
+                <stop offset=".6" stopColor="#2D7BFF" />
+                <stop offset="1" stopColor="#7B6CF6" />
+              </linearGradient>
+              <linearGradient id="gRing" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stopColor="#2FC9F5" />
+                <stop offset=".55" stopColor="#2D7BFF" />
+                <stop offset="1" stopColor="#7B6CF6" />
+              </linearGradient>
+            </defs>
+            <circle className="intro-draw intro-ring" cx="200" cy="200" r="186" pathLength={1} style={{ animationDelay: ".9s", animationDuration: "1.5s" }} />
+            <rect className="intro-bar" x="146" y="148" width="8" height="26" rx="4" style={{ animationDelay: ".3s" }} />
+            <rect className="intro-bar" x="162" y="130" width="9" height="44" rx="4.5" style={{ animationDelay: ".37s" }} />
+            <rect className="intro-bar" x="178" y="110" width="10" height="64" rx="5" style={{ animationDelay: ".44s" }} />
+            <rect className="intro-bar" x="195" y="92" width="11" height="84" rx="5.5" style={{ animationDelay: ".51s" }} />
+            <rect className="intro-bar" x="212" y="110" width="10" height="64" rx="5" style={{ animationDelay: ".44s" }} />
+            <rect className="intro-bar" x="229" y="130" width="9" height="44" rx="4.5" style={{ animationDelay: ".37s" }} />
+            <rect className="intro-bar" x="246" y="148" width="8" height="26" rx="4" style={{ animationDelay: ".3s" }} />
+            <path className="intro-draw intro-deck" d="M48 236 Q200 184 352 236" pathLength={1} style={{ animationDelay: ".8s", animationDuration: "1.2s" }} />
+            <path className="intro-draw intro-arch" d="M92 254 V244 a17 17 0 0 1 34 0 V254" pathLength={1} style={{ animationDelay: "1.4s", animationDuration: ".6s" }} />
+            <path className="intro-draw intro-arch" d="M138 254 V238 a19 19 0 0 1 38 0 V254" pathLength={1} style={{ animationDelay: "1.5s", animationDuration: ".6s" }} />
+            <path className="intro-draw intro-arch" d="M178 254 V230 a22 22 0 0 1 44 0 V254" pathLength={1} style={{ animationDelay: "1.6s", animationDuration: ".6s" }} />
+            <path className="intro-draw intro-arch" d="M224 254 V238 a19 19 0 0 1 38 0 V254" pathLength={1} style={{ animationDelay: "1.7s", animationDuration: ".6s" }} />
+            <path className="intro-draw intro-arch" d="M274 254 V244 a17 17 0 0 1 34 0 V254" pathLength={1} style={{ animationDelay: "1.8s", animationDuration: ".6s" }} />
+            <path className="intro-draw intro-water" d="M70 256 H330" pathLength={1} style={{ animationDelay: "1.8s", animationDuration: ".9s" }} />
+            <circle className="intro-lamp" cx="109" cy="254" r="2.8" style={{ animationDelay: "2.1s" }} />
+            <circle className="intro-lamp" cx="157" cy="254" r="2.8" style={{ animationDelay: "2.15s" }} />
+            <circle className="intro-lamp" cx="200" cy="254" r="3.2" style={{ animationDelay: "2.2s" }} />
+            <circle className="intro-lamp" cx="243" cy="254" r="2.8" style={{ animationDelay: "2.25s" }} />
+            <circle className="intro-lamp" cx="291" cy="254" r="2.8" style={{ animationDelay: "2.3s" }} />
           </svg>
         </div>
-        <svg
-          className="intro-wordmark"
-          viewBox={WORDMARK_VIEWBOX}
-          role="presentation"
-          fill="currentColor"
-          stroke="currentColor"
-        >
-          <title>{WORDMARK_TEXT}</title>
-          {WORDMARK_GLYPHS.map((d, i) => (
-            <path
-              key={i}
-              d={d}
-              pathLength={1}
-              className="w-glyph"
-              style={{ ["--i" as string]: i }}
-            />
-          ))}
-        </svg>
-        <p className="intro-tagline">
-          <span>{typed}</span>
-          <i className="intro-caret" />
-        </p>
+        <div className="intro-word" aria-label="BridgeVoice">
+          <b>Bridge</b>
+          <span>Voice</span>
+        </div>
+        <p className="intro-tag">AI Interpreter &amp; Translation Assistant</p>
+        <div className="intro-mic" aria-hidden="true">
+          <div className="intro-mic-line" />
+          <svg viewBox="0 0 18 22" fill="none" stroke="#2D7BFF" strokeWidth="1.6" strokeLinecap="round">
+            <rect x="6" y="1.5" width="6" height="11" rx="3" />
+            <path d="M2.5 10.5a6.5 6.5 0 0 0 13 0M9 17v3.5M6 20.5h6" />
+          </svg>
+          <div className="intro-mic-line" />
+        </div>
+        <div className="intro-progress" aria-hidden="true">
+          <i />
+        </div>
       </div>
       <button className="intro-skip" tabIndex={-1} type="button">
-        Skip
+        Skip intro
       </button>
     </div>
   );

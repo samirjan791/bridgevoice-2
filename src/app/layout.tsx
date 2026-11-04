@@ -55,6 +55,10 @@ export default function RootLayout({
       <head>
         {/* Decides theme + opening sequence before first paint (no flash). */}
         <script dangerouslySetInnerHTML={{ __html: bootScript }} />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap"
+        />
       </head>
       <body>
         <Intro />
