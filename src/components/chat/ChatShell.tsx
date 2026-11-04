@@ -59,6 +59,18 @@ export function ChatShell({ demo = false }: { demo?: boolean }) {
   const documentInput=useRef<HTMLInputElement>(null);
   const [dismissedSuggestions,setDismissedSuggestions]=useState<string[]>([]);
   const chat = useConversation(notify);
+  // 5.0.1: after 20s with no draft yet, say so in the existing streaming
+  // section (same component, same styling) instead of leaving the user
+  // staring at a dot. No new panel, no layout change.
+  const [stillWorking, setStillWorking] = useState(false);
+  useEffect(() => {
+    if (!chat.busy || chat.draft) {
+      setStillWorking(false);
+      return;
+    }
+    const timer = setTimeout(() => setStillWorking(true), 20000);
+    return () => clearTimeout(timer);
+  }, [chat.busy, chat.draft]);
   const provider = "meta" as const;
   const [speaker,setSpeaker]=useState<"Person A"|"Person B">("Person A");
   const [speakInterpretation,setSpeakInterpretation]=useState(false);
@@ -602,7 +614,7 @@ export function ChatShell({ demo = false }: { demo?: boolean }) {
             {chat.busy && (
               <section className="streaming-message" aria-busy="true">
                 <span className="sr-only" role="status">
-                  {chat.draft ? "Writing response" : "Waiting for response"}
+                  {chat.draft ? "Writing response" : stillWorking ? "Still working on it…" : "Waiting for response"}
                 </span>
                 {chat.draft ? (
                   <>

@@ -1,7 +1,7 @@
 # BridgeVoice — Real-time co-pilot for Pashto/Dari community interpreters
 
 **Live demo:** https://bridgevoice.us
-**Version:** 5.0.0
+**Version:** 5.0.1
 **Built for:** Meta Global AI Developer Hackathon 2026 — Indie Developer track
 
 ## What it is

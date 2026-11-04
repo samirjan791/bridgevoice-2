@@ -108,6 +108,12 @@ input[type="checkbox"] {accent-color:var(--voice);}
 .settings-panel dd {margin:4px 0;}
 .settings-panel summary {cursor:pointer;font-size:14px;}
 @media(min-width:761px){.chat-app .mobile-only{display:none!important;}}
+/* 5.0.1 top-bar alignment: the sidebar collapse icon and the topbar
+   hide-sidebar icon both hide the sidebar. The sidebar row sits 8px lower
+   (16px sidebar padding + 42px row vs the 58px topbar), so lift the brand
+   row 8px on desktop only — both icons then share center y=29. Mobile
+   is untouched: the sidebar there is an overlay, not a side-by-side row. */
+@media(min-width:761px){.sidebar-brand{margin-top:-8px}}
 @media(max-width:760px){
  .chat-app,.chat-app.sidebar-collapsed {display:block;}
  .chat-app .chat-sidebar {position:fixed;inset-block:0;inset-inline-start:0;transform:translateX(-100%);visibility:hidden;pointer-events:none;width:min(290px,85vw);}

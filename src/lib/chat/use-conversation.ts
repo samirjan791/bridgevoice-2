@@ -16,6 +16,7 @@ export function useConversation(notify: (s: string) => void) {
     [error, setError] = useState(""),
     [connection, setConnection] = useState("Not verified");
   const abort = useRef<AbortController | null>(null),
+    attemptAbort = useRef<AbortController | null>(null),
     generation = useRef(0),
     inFlight = useRef(false),
     last = useRef<{
@@ -31,6 +32,7 @@ export function useConversation(notify: (s: string) => void) {
   );
   function stop() {
     generation.current++;
+    attemptAbort.current?.abort();
     abort.current?.abort();
     inFlight.current = false;
     setBusy(false);
@@ -77,37 +79,72 @@ export function useConversation(notify: (s: string) => void) {
     abort.current = new AbortController();
     let result: ChatResult | undefined;
     try {
-      {
-        setConnection("Connecting");
-        const response = await fetch("/api/chat", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-bridgevoice-access":
-              sessionStorage.getItem("bridgevoice.access") || "",
-          },
-          body: JSON.stringify(request),
-          signal: abort.current.signal,
-        });
-        if (!response.ok) {
-          const data = await response.json();
-          throw new Error(data.error || "Unable to connect. Please retry.");
-        }
-        if (!response.body) throw new Error("No response received.");
-        for await (const event of sseData(response.body)) {
+      // 5.0.1: a stalled stream must never strand the user. Each attempt
+      // gets 60s of SSE inactivity before it is aborted; a timeout or a
+      // network failure retries once automatically. HTTP errors (including
+      // the daily limit) are NOT retried, and a user stop never retries.
+      let attempts = 0;
+      while (attempts < 2) {
+        attempts++;
+        const attemptController = new AbortController();
+        attemptAbort.current = attemptController;
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        let attemptTimedOut = false;
+        const arm = () => {
+          if (timer) clearTimeout(timer);
+          timer = setTimeout(() => {
+            attemptTimedOut = true;
+            attemptController.abort();
+          }, 60000);
+        };
+        try {
+          setConnection("Connecting");
+          const response = await fetch("/api/chat", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-bridgevoice-access":
+                sessionStorage.getItem("bridgevoice.access") || "",
+            },
+            body: JSON.stringify(request),
+            signal: attemptController.signal,
+          });
+          if (!response.ok) {
+            const data = await response.json();
+            throw new Error(data.error || "Unable to connect. Please retry.");
+          }
+          if (!response.body) throw new Error("No response received.");
+          arm();
+          for await (const event of sseData(response.body)) {
+            if (run !== generation.current) return false;
+            arm();
+            if (event.type === "draft" && typeof event.text === "string")
+              setDraft(event.text);
+            else if (event.type === "result")
+              result = chatResultSchema.parse(event.result);
+            else if (event.type === "error") throw new Error(event.error);
+          }
+          if (timer) clearTimeout(timer);
+          if (!result)
+            throw new Error(
+              "Connection ended before the answer was verified. Please retry.",
+            );
+          break;
+        } catch (e) {
+          if (timer) clearTimeout(timer);
           if (run !== generation.current) return false;
-          if (event.type === "draft" && typeof event.text === "string")
-            setDraft(event.text);
-          else if (event.type === "result")
-            result = chatResultSchema.parse(event.result);
-          else if (event.type === "error") throw new Error(event.error);
+          if (attempts < 2 && (attemptTimedOut || e instanceof TypeError)) {
+            setConnection("Connecting");
+            continue;
+          }
+          throw e;
         }
-        if (!result)
-          throw new Error(
-            "Connection ended before the answer was verified. Please retry.",
-          );
-        setConnection("Connected");
       }
+      if (!result)
+        throw new Error(
+          "Connection ended before the answer was verified. Please retry.",
+        );
+      setConnection("Connected");
       if (run !== generation.current) return false;
       setMessages([
         ...base,

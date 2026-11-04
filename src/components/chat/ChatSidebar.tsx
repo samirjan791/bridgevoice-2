@@ -96,7 +96,7 @@ export function ChatSidebar({
             aria-label={open ? "Close navigation" : "Hide sidebar"}
             onClick={open ? onClose : onCollapse}
           >
-            <PanelLeftClose size={18} />
+            <PanelLeftClose size={20} />
           </button>
         </div>
         <button className="new-chat" onClick={onNew}>
