@@ -22,7 +22,7 @@ const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9\u0600-\u06FF\s]/g,
 const LANG_LABELS = { en: "English", "es-US": "Spanish", ps: "Pashto", "fa-AF": "Dari" } as const;
 const isImageRequest = (text: string) => /\b(draw|generate|create|make|design)\b[\s\S]{0,80}\b(image|picture|photo|illustration)\b/i.test(text);
 const SUGGESTIONS = [
-  { label: "Build a website", message: "Build me a sample website for a small bakery" },
+  { label: "Analyze a document", message: "Help me analyze a document" },
   { label: "Plan my day", message: "Help me plan my day" },
   { label: "Create a project", message: "Help me create a project plan" },
   { label: "Analyze data", message: "Help me analyze some data" },
@@ -31,7 +31,7 @@ const SUGGESTIONS = [
 export default function AgentPage() {
   const { settings, update } = usePreferences();
   const [active, setActive] = useState(false), [listening, setListening] = useState(false), [busy, setBusy] = useState(false), [speaking, setSpeaking] = useState(false), [muted, setMuted] = useState(false);
-  const [language, setLanguage] = useState<(typeof choices)[number]["id"]>("en"), [name, setName] = useState("Boss"), [input, setInput] = useState(""), [lines, setLines] = useState<Line[]>([]), [interim, setInterim] = useState(""), [error, setError] = useState("");
+  const [language, setLanguage] = useState<(typeof choices)[number]["id"]>("en"), [name, setName] = useState("Boss"), [showPrefs, setShowPrefs] = useState(false), [input, setInput] = useState(""), [lines, setLines] = useState<Line[]>([]), [interim, setInterim] = useState(""), [error, setError] = useState("");
   const recognition = useRef<Recognition | null>(null), controller = useRef<AbortController | null>(null);
   const activeRef = useRef(false), busyRef = useRef(false), mutedRef = useRef(false), speakingRef = useRef(false), langRef = useRef(language);
   const history = useRef<Line[]>([]), voiceEpoch = useRef(0), sendRef = useRef<(text: string) => void>(() => {});
@@ -219,7 +219,8 @@ export default function AgentPage() {
       <div className="agent-top"><Link className="agent-brand" href="/app">⌁ <strong>Bridge<span>Voice</span></strong></Link><div className="agent-toplinks"><Link href="/app">Chat</Link><Link href="/settings#live">Settings</Link></div></div>
       <div className="agent-main agent-chat-column">
         {!active && (<><header className="agent-heading"><h2 className="agent-eyebrow" aria-label="BridgeAgent Live">✦ BRIDGEAGENT LIVE</h2><h1>Good to see you, {name.trim() || "Boss"}.</h1><p>Your AI agent — talk naturally, get answers.</p></header>
-        <section className="agent-preferences"><label>How should I address you?<input aria-label="Preferred title" maxLength={60} value={name} onChange={e=>{setName(e.target.value);update({agentTitle:e.target.value});}} disabled={active}/></label><label>Conversation language<select value={language} onChange={e=>changeLanguage(e.target.value as typeof language)}>{choices.map(c=><option key={c.id} value={c.id}>{c.label}</option>)}</select></label></section></>)}
+        <div className="agent-prefs-toggle"><button type="button" onClick={()=>setShowPrefs(v=>!v)} aria-expanded={showPrefs}>{name.trim() || "Boss"} · {choices.find(c=>c.id===language)?.label || "English"} {showPrefs ? "▴" : "▾"}</button></div>
+        {showPrefs && (<section className="agent-preferences"><label>How should I address you?<input aria-label="Preferred title" maxLength={60} value={name} onChange={e=>{setName(e.target.value);update({agentTitle:e.target.value});}} disabled={active}/></label><label>Conversation language<select value={language} onChange={e=>changeLanguage(e.target.value as typeof language)}>{choices.map(c=><option key={c.id} value={c.id}>{c.label}</option>)}</select></label></section>)}</>)}
         <section className={`agent-voicebar ${active ? "is-active" : "is-idle"}`}><div aria-label="Agent status" className={`agent-orb ${settings.orbAnimation && active ? "agent-orb-active" : ""} ${status}`}><Mic size={24}/></div><div className="agent-voicebar-text"><h2 className="agent-state">{statusText}</h2><p className="agent-hint">{active ? "I'm listening. You can speak over me to interrupt." : "Tap Start listening to begin. No wake word or background listening."}</p>{interim && settings.showTranscript && <p role="status" className="agent-interim">Hearing: {interim}</p>}</div>
           <div className="agent-actions">{!active ? <button className="agent-start" onClick={begin}><Mic size={19}/> Start listening</button> : <><button className="agent-circle agent-end" onClick={stop} aria-label="End session"><PhoneOff/></button><button className="agent-circle" onClick={toggleMute} aria-label={muted?"Unmute speaker":"Mute speaker"}>{muted?<VolumeX/>:<Volume2/>}</button><button className="agent-circle" onClick={()=>{stopRecognition();window.setTimeout(()=>{if(activeRef.current)listen();},150);}} aria-label={listening?"Restart listening":"Start listening"}>{listening?<Mic/>:<MicOff/>}</button></>}</div>
         </section>
