@@ -17,15 +17,14 @@
  .chat-app .chat-composer:focus-within { border-color:var(--muted); box-shadow:0 4px 18px #00000008; outline:none; }
  .chat-app .chat-composer textarea { font-size:16px; min-height:40px; }
  .chat-app .chat-composer .tool-icon { width:36px; height:36px; min-height:36px; }
- .chat-app .chat-composer:has(textarea:focus) { flex-wrap:wrap; border-radius:24px; padding:8px 12px; gap:4px; }
- .chat-app .chat-composer:has(textarea:focus) textarea { order:1; flex:0 0 100%; width:100%; min-height:40px; padding:8px 4px; }
- .chat-app .chat-composer:has(textarea:focus) .composer-menu-anchor { order:2; margin-inline-end:auto; }
- .chat-app .chat-composer:has(textarea:focus)>button { order:3; }
- .chat-app.chat-empty:has(textarea:focus) .suggestion-rows { display:none; }
- .chat-app.chat-empty:has(textarea:focus) .plain-greeting { visibility:hidden; }
  .chat-disclaimer { font-size:11px; line-height:1.4; margin:0 0 6px; }
 }
 
 @media (max-width:760px){.chat-app .chat-composer{min-height:56px;padding:8px 12px;border-radius:28px}}
 
-@media (max-width:760px){.chat-app .chat-composer{padding:12px 14px}.chat-app .chat-composer:has(textarea:focus){padding:12px 14px;border-radius:28px}}
+
+@media (max-width:760px){.chat-app .chat-composer{padding:12px 14px}}
+@media (max-width:760px){.chat-app.chat-empty:has(textarea:focus) .suggestion-rows{display:none}.chat-app.chat-empty:has(textarea:focus) .plain-greeting{visibility:hidden}}
+@media (max-width:760px){.chat-app .chat-bottom,.chat-app.chat-empty .chat-bottom{padding:8px 16px max(10px,env(safe-area-inset-bottom))}}
+@media (max-width:760px){.chat-app .chat-composer textarea{min-height:36px}}
+@media (max-width:760px){.chat-app .chat-composer{padding:8px 14px;min-height:52px}}

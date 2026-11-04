@@ -66,7 +66,7 @@ export function ChatComposer({
   const t=ui[uiLanguage];
   const [excerptOpen,setExcerptOpen]=useState(false);
   const hasAttachments=!!(photoName||documentAttachment||uploadingName);
-  useEffect(()=>{ if(input.current){input.current.style.height="auto";input.current.style.height=Math.min(160,Math.max(44,input.current.scrollHeight))+"px";} },[text]);
+  useEffect(()=>{ if(input.current){input.current.style.height="auto";input.current.style.height=Math.min(160,Math.max(36,input.current.scrollHeight))+"px";} },[text]);
   useEffect(()=>{
    if(!menuOpen)return;
    menu.current?.querySelector<HTMLButtonElement>('button')?.focus();

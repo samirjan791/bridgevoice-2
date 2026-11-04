@@ -159,3 +159,6 @@ input[type="checkbox"] {accent-color:var(--voice);}
 [data-theme="dark"] .chat-app .chat-composer{background:#2f2f2f;border-color:transparent}
 .chat-app .chat-composer{align-items:flex-end;padding:12px 14px}
 .chat-app .chat-composer textarea{line-height:24px}
+.chat-app .chat-composer textarea{font-size:16px}
+.chat-app .chat-composer{padding:8px 14px;min-height:52px}
+.chat-app .chat-composer textarea{padding:6px 2px;line-height:22px;min-height:36px}
