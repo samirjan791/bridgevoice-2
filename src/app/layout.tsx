@@ -4,6 +4,7 @@ import "./motion.css";
 import "./intro.css";
 import "@/styles/chat-layout.css";
 import "@/styles/mobile-composer.css";
+import "@/styles/settings.css";
 import { Providers } from "@/components/providers";
 import { Shell } from "@/components/shell";
 import { Intro } from "@/components/intro/Intro";

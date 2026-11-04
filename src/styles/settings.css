@@ -1,0 +1,286 @@
+/* BridgeVoice settings — ChatGPT iOS settings design: pale grouped background,
+   white rounded cards, icon + label + chevron rows, inset hairline dividers. */
+.settings-page {
+  --set-bg: #f2f2f7;
+  --set-card: #fff;
+  --set-label: #6c6c70;
+  --set-text: #000;
+  --set-value: #8a8a8e;
+  --set-line: #e5e5ea;
+  --set-chevron: #c7c7cc;
+  --set-danger: #ff3b30;
+  --set-switch-off: #e9e9ea;
+  min-height: 100dvh;
+  background: var(--set-bg);
+  color: var(--set-text);
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 20px 16px max(32px, env(safe-area-inset-bottom));
+}
+[data-theme="dark"] .settings-page {
+  --set-bg: #000;
+  --set-card: #1c1c1e;
+  --set-label: #98989d;
+  --set-text: #fff;
+  --set-value: #98989d;
+  --set-line: #38383a;
+  --set-chevron: #48484a;
+  --set-danger: #ff453a;
+  --set-switch-off: #39393d;
+}
+.settings-page button,
+.settings-page input,
+.settings-page select,
+.settings-page a {
+  font: inherit;
+}
+.set-close {
+  position: fixed;
+  inset-inline-end: 16px;
+  top: 16px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--set-card);
+  color: var(--set-text);
+  display: grid;
+  place-items: center;
+  box-shadow: 0 2px 12px rgb(0 0 0 / 0.15);
+  z-index: 50;
+  text-decoration: none;
+}
+.set-title {
+  font-size: 28px;
+  font-weight: 700;
+  margin: 12px 0 20px;
+}
+.set-back {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: none;
+  border: 0;
+  color: #1677ff;
+  font-size: 16px;
+  padding: 4px 0;
+  margin-bottom: 4px;
+  cursor: pointer;
+}
+.set-search {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  align-items: center;
+  background: var(--set-card);
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin-bottom: 20px;
+  color: var(--set-value);
+  font-weight: 400;
+  min-height: 44px;
+  box-sizing: border-box;
+}
+.set-search input {
+  border: 0;
+  background: transparent;
+  outline: none;
+  width: 100%;
+  min-width: 0;
+  font-size: 16px;
+  color: var(--set-text);
+}
+.set-group-label {
+  color: var(--set-label);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 0 16px;
+  margin: 24px 0 8px;
+}
+.settings-detail > :first-child .set-group-label {
+  margin-top: 4px;
+}
+.set-card {
+  background: var(--set-card);
+  border-radius: 24px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+.set-card:not(.set-home-card) > * + * {
+  border-top: 1px solid var(--set-line);
+}
+.set-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 52px;
+  padding: 12px 16px;
+  background: transparent;
+  border: 0;
+  color: var(--set-text);
+  font-size: 16px;
+  font-weight: 400;
+  text-align: start;
+  text-decoration: none;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+a.set-row,
+button.set-row {
+  -webkit-tap-highlight-color: transparent;
+}
+.set-row-label {
+  flex: 1;
+  min-width: 0;
+}
+.set-icon {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  color: var(--set-text);
+}
+.set-row-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  align-self: stretch;
+  min-width: 0;
+}
+.set-home-card > .set-row + .set-row .set-row-main {
+  border-top: 1px solid var(--set-line);
+}
+.set-chevron {
+  flex-shrink: 0;
+  color: var(--set-chevron);
+}
+[dir="rtl"] .set-chevron {
+  transform: scaleX(-1);
+}
+.set-value {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--set-value);
+  min-width: 0;
+}
+.set-value select {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  outline: none;
+  color: var(--set-value);
+  font-size: 16px;
+  text-align: end;
+  max-width: 52vw;
+  padding: 4px 0;
+  cursor: pointer;
+}
+.set-text-input {
+  border: 0;
+  background: transparent;
+  outline: none;
+  flex: 1;
+  min-width: 0;
+  font-size: 16px;
+  color: var(--set-text);
+  text-align: end;
+}
+.set-dim {
+  color: var(--set-value);
+  font-size: 15px;
+}
+.set-toggle {
+  justify-content: space-between;
+}
+.set-toggle input[type="checkbox"] {
+  appearance: none;
+  flex-shrink: 0;
+  width: 50px;
+  height: 30px;
+  border: 0;
+  border-radius: 15px;
+  background: var(--set-switch-off);
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.set-toggle input[type="checkbox"]::after {
+  content: "";
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  top: 2px;
+  inset-inline-start: 2px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.3);
+  transition: transform 0.2s;
+}
+.set-toggle input[type="checkbox"]:checked {
+  background: #1677ff;
+}
+.set-toggle input[type="checkbox"]:checked::after {
+  transform: translateX(20px);
+}
+[dir="rtl"] .set-toggle input[type="checkbox"]:checked::after {
+  transform: translateX(-20px);
+}
+.set-slider {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  padding-top: 14px;
+  padding-bottom: 14px;
+}
+.set-slider input[type="range"] {
+  width: 100%;
+  accent-color: #1677ff;
+}
+.set-action {
+  justify-content: flex-start;
+}
+.set-danger {
+  color: var(--set-danger);
+}
+.set-foot {
+  color: var(--set-value);
+  font-size: 13px;
+  line-height: 1.5;
+  padding: 8px 16px 0;
+  margin: 0 0 4px;
+}
+.set-row-group {
+  display: block;
+}
+.set-row-group > * + * {
+  border-top: 1px solid var(--set-line);
+}
+.set-details summary {
+  list-style: none;
+  cursor: pointer;
+}
+.set-details summary::-webkit-details-marker {
+  display: none;
+}
+.set-details-body {
+  padding: 8px 16px 16px;
+  border-top: 1px solid var(--set-line);
+}
+.set-details-body p {
+  font-size: 14px;
+  color: var(--set-value);
+  line-height: 1.7;
+  margin: 0 0 6px;
+}
+.set-details-body button {
+  background: none;
+  border: 0;
+  color: #1677ff;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0;
+}
