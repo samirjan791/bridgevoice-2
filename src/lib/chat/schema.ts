@@ -3,6 +3,7 @@ import { language, entrySchema } from "../schema";
 export const taskSchema = z.enum([
   "auto",
   "chat",
+  "agent",
   "translate",
   "explain",
   "simplify",
@@ -50,6 +51,12 @@ export const chatRequestSchema = z
     // (UTC) must never be presented as the user's time; when this is
     // absent, no time context is sent at all.
     clientTime: z.object({ epochMs: z.number().int(), timeZone: z.string().max(100) }).optional(),
+    // Merged agent engines (5.0.0): saved/volunteered display name,
+    // glossary context, and the one-time name ask — none of these change
+    // the visible chat layout.
+    displayName: z.string().max(60).optional(),
+    contextNote: z.string().max(2000).optional(),
+    askName: z.boolean().optional(),
     image: z.object({ name: z.string().max(120), dataUrl: z.string().max(4200000).regex(/^data:image\/(jpeg|png|webp);base64,/)}).optional(),
   })
   .refine(

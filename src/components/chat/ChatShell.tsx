@@ -45,6 +45,12 @@ import {
 import { readHistory, persistChat, removeChat, toggleChatPin } from "@/lib/chat/history";
 import { readSaved, saveEntry, download } from "@/lib/storage";
 import { demos } from "@/data/demos";
+import { matchGlossary } from "@/lib/glossary";
+import {
+  USERNAME_KEY,
+  NAME_ASKED_KEY,
+  parseVolunteeredName,
+} from "@/lib/chat/agent";
 export function ChatShell({ demo = false }: { demo?: boolean }) {
   useChatViewport();
   const { settings, update, notify } = usePreferences(),
@@ -289,6 +295,32 @@ export function ChatShell({ demo = false }: { demo?: boolean }) {
     // already lives in the chat transcript, so it must not linger in the box
     // while the reply streams.
     setText("");
+    // Merged agent engines (5.0.0): name memory (saved name, or a name
+    // the user volunteers now), the one-time name ask, and glossary terms
+    // wired into the request. No visible layout change.
+    let displayName: string | undefined;
+    let askName = false;
+    let contextNote: string | undefined;
+    try {
+      const saved = localStorage.getItem(USERNAME_KEY);
+      if (saved) displayName = saved.slice(0, 60);
+      const volunteered = parseVolunteeredName(message);
+      if (volunteered) {
+        try {
+          localStorage.setItem(USERNAME_KEY, volunteered);
+          localStorage.setItem(NAME_ASKED_KEY, "1");
+        } catch { /* private mode */ }
+        displayName = volunteered;
+      } else if (!displayName && !localStorage.getItem(NAME_ASKED_KEY)) {
+        askName = true;
+        try { localStorage.setItem(NAME_ASKED_KEY, "1"); } catch { /* private mode */ }
+      }
+    } catch { /* private mode */ }
+    try {
+      const matches = matchGlossary(message, selectedLanguage);
+      if (matches.length)
+        contextNote = `Relevant glossary terms (unreviewed drafts — verify before relying on them): ${matches.slice(0, 6).map((e) => { const t = (e as unknown as Record<string, string | undefined>)[selectedLanguage]; return t && t !== e.en ? `${e.en} (${t})` : e.en; }).join("; ")}`;
+    } catch { /* glossary unavailable */ }
     const ok = await chat.send(
       {
         message,
@@ -296,6 +328,9 @@ export function ChatShell({ demo = false }: { demo?: boolean }) {
         language: selectedLanguage,
         sourceLanguage: inputSource,
         task: bridge ? "bridge" : mirror ? "compare" : task,
+        displayName,
+        contextNote,
+        askName,
         level: /simpler|shorter/i.test(message)
           ? "simple"
           : /explain more/i.test(message)

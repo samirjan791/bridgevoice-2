@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import {
   Plus,
-  Bot,
   BookOpen,
   Play,
   Settings,
@@ -139,7 +138,6 @@ export function ChatSidebar({
         </div>
         <nav>
           {tools}
-          <Link href="/agent"><Bot size={18} /> BridgeAgent Live</Link>
           <Link href="/glossary">
             <BookOpen size={18} />
             {t.glossary}

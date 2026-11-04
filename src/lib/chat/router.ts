@@ -1,5 +1,6 @@
 import { ChatRequest, Task, ChatMessage } from "./schema";
 import { Language } from "../languages";
+import { detectAgentTask } from "./agent";
 export function detectTask(text: string, document = false): Task {
   if (
     /bridge mode|start interpret|interpret.*conversation|interpret.*call/i.test(
@@ -16,6 +17,7 @@ export function detectTask(text: string, document = false): Task {
   if (/difficult words|terminology|extract.*terms/i.test(text)) return "terms";
   if (/explain|what does|meaning|understand|تشریح|توضیح/i.test(text))
     return "explain";
+  if (detectAgentTask(text)) return "agent";
   return "chat";
 }
 export function detectLanguage(text: string): Language | undefined {
