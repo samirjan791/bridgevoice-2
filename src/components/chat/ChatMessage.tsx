@@ -1,8 +1,5 @@
 "use client";
 import { userFollowUps } from "@/lib/chat/follow-ups";
-import { BrandMark } from "../brand/BrandMark";
-import { APP_NAME } from "@/lib/brand";
-
 import { LinkedMeaning } from "./LinkedMeaning";
 import { useState } from "react";
 import { MeaningCheck, MeaningReview } from "./MeaningCheck";
@@ -94,10 +91,6 @@ export function ChatMessage({
   const { text: visibleText, sites } = extractWebsites(message.content);
   return (
     <article className="chat-message assistant">
-      <div className="assistant-label">
-        <BrandMark size={28} />
-        <span className="assistant-identity"><b>{APP_NAME}</b><small className="robot-meta-label">Powered by Meta</small></span>
-      </div>
       <div
         className="markdown"
         dir={result ? packs[result.targetLanguage].dir : "auto"}

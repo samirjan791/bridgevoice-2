@@ -1,6 +1,6 @@
 /* Chat layout: this is the canonical visual layer for chat and settings. */
 :root,[data-theme="light"] { --bg:#fcfcfc;--surface:#f9f9f9;--raised:#f0f0f0;--text:#0d0d0d;--muted:#737373;--line:#e5e5e5;--accent:#0d0d0d;--accent-ink:#fff;--voice:#1677ff;--bubble:#eaf3ff;--bubble-text:#174a82;--composer:#fff;color-scheme:light; }
-[data-theme="dark"] {--bg:#161616;--surface:#111;--raised:#282828;--text:#eee;--muted:#aaa;--line:#333;--accent:#eee;--accent-ink:#111;--voice:#1677ff;--bubble:#203149;--bubble-text:#c7dfff;--composer:#202020;color-scheme:dark;}
+[data-theme="dark"] {--bg:#161616;--surface:#111;--raised:#282828;--text:#eee;--muted:#aaa;--line:#333;--accent:#eee;--accent-ink:#111;--voice:#1677ff;--bubble:#1e1e78;--bubble-text:#ffffff;--composer:#202020;color-scheme:dark;}
 [data-contrast="true"]{--muted:var(--text);--line:var(--text);}
 body {font-family:Arial,Helvetica,system-ui,sans-serif;background:var(--bg);color:var(--text);}
 button,input,select,textarea {font-family:inherit;}
@@ -147,3 +147,5 @@ input[type="checkbox"] {accent-color:var(--voice);}
 .live-voice .voice-stage {flex:1;min-height:260px;}
 .live-voice .voice-dialog-controls {width:min(560px,100%);margin:auto;}
 .live-voice .voice-caption {max-width:560px;max-height:120px;overflow:auto;}
+
+.chat-app .chat-message.user .user-actions{display:none}.chat-app .chat-message.user:hover .user-actions,.chat-app .chat-message.user:focus-within .user-actions{display:flex}
